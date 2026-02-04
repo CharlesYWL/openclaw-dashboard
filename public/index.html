@@ -2049,12 +2049,13 @@
     async function toggleAgentCard(agentId) {
       if (expandedAgentId === agentId) {
         expandedAgentId = null;
+        renderAgents();
       } else {
         expandedAgentId = agentId;
-        // Load sessions when expanding
+        renderAgents();
+        // Load sessions AFTER rendering
         await loadAgentSessions(agentId);
       }
-      renderAgents();
     }
 
     async function loadAgentSessions(agentId) {

@@ -1048,20 +1048,28 @@ app.get('/api/agents/:id/sessions', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Agent not found' });
     }
 
-    // Fetch fresh sessions
-    const sessionsResult = await fetchAgentSessions(agent);
-    
-    // Update cached sessions
+    // Get sessions from cached status (already fetched via openclaw CLI)
     const status = agentStatus.get(agent.id) || {};
-    if (sessionsResult.success) {
-      status.sessions = sessionsResult.sessions;
-    }
-    agentStatus.set(agent.id, status);
+    const sessions = status.sessions || [];
+    
+    // Format sessions for display
+    const formattedSessions = sessions.map(s => ({
+      id: s.sessionId,
+      sessionId: s.sessionId,
+      key: s.key,
+      kind: s.kind,
+      channel: s.key?.split(':')[2] || s.kind || 'unknown',
+      updatedAt: s.updatedAt,
+      age: s.age,
+      model: s.model,
+      totalTokens: s.totalTokens,
+      percentUsed: s.percentUsed
+    }));
 
     res.json({
-      success: sessionsResult.success,
-      sessions: sessionsResult.sessions,
-      error: sessionsResult.error
+      success: true,
+      sessions: formattedSessions,
+      error: null
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
