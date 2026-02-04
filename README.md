@@ -1,24 +1,53 @@
-# 🐾 OpenClaw Gateway Dashboard
+# 🐾 OpenClaw Dashboard
 
-A sleek, real-time web dashboard for managing your [OpenClaw](https://github.com/openclaw/openclaw) Gateway.
+A beautiful, real-time web dashboard for monitoring and managing your [OpenClaw](https://github.com/openclaw/openclaw) AI agents.
 
-![Dashboard Screenshot](screenshot.png)
+![Dashboard Screenshot](screenshots/dashboard.png)
 
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| 📜 **Real-time Logs** | Live log streaming via WebSocket with auto-scroll |
-| 🎨 **JSON Highlighting** | Syntax-highlighted JSON for easy reading |
-| 🔍 **Log Search** | Fast server-side search with highlighting |
-| 🎛️ **Gateway Controls** | Start / Stop / Restart with one click |
-| 💬 **Session Logs** | View Discord & Telegram session transcripts |
-| 📊 **Status Monitor** | Auto-refreshing connection status |
+### 📊 Agent Fleet Overview
+- **Real-time agent status** - Monitor all your agents at a glance
+- **Fleet health bar** - Visual indicator of healthy/idle/offline agents
+- **Session tracking** - See active sessions with channel types (Telegram, Discord, WhatsApp, etc.)
+- **Token usage** - Monitor context window usage with color-coded progress bars
+- **Activity status** - 🟢 Active / 🟡 Idle / ⚫ Stale indicators
+
+### 🎛️ Agent Controls
+- **Heartbeat toggle** - Enable/disable periodic agent check-ins
+- **Trigger heartbeat** - Manually trigger agent to check todos, emails, calendar
+- **Refresh status** - Force refresh agent status
+- **Reset sessions** - Clear conversation history (with double confirmation)
+
+![Modal Dialog](screenshots/modal.png)
+
+### 📋 Log Viewer
+- **Gateway logs** - Real-time streaming via WebSocket
+- **Session logs** - Browse and search individual session transcripts
+- **JSON syntax highlighting** - Beautiful, readable log entries
+- **Search** - Fast server-side search with highlighting
+
+![Logs Screenshot](screenshots/logs.png)
+
+### 🖥️ System Metrics
+- **CPU / Memory / Disk** - Real-time system resource monitoring
+- **Gateway status** - Start/Stop/Restart controls
+- **Host information** - Load average, uptime display
+
+### 🔐 Security
+- **Password authentication** - Secure access to your dashboard
+- **Session-based auth** - Persistent login with cookies
 
 ## 🚀 Quick Start
 
+### Prerequisites
+- Node.js 18+
+- OpenClaw installed and configured
+
+### Installation
+
 ```bash
-# Clone the repo
+# Clone the repository
 git clone https://github.com/CharlesYWL/openclaw-dashboard.git
 cd openclaw-dashboard
 
@@ -29,80 +58,75 @@ npm install
 node server.js
 ```
 
-Open **http://localhost:3456** in your browser.
+### Configuration
 
-## 🌐 Remote Access
+Set environment variables or edit `server.js`:
 
-Access via Tailscale or any reverse proxy:
-
+```bash
+PORT=3456                    # Dashboard port (default: 3456)
+DASHBOARD_PASSWORD=your_pw   # Access password
 ```
-http://<your-tailscale-ip>:3456
+
+### Running with PM2 (Recommended)
+
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Start with PM2
+pm2 start server.js --name openclaw-dashboard
+
+# Save for auto-restart
+pm2 save
+pm2 startup
 ```
+
+## 🎨 UI Features
+
+| Feature | Description |
+|---------|-------------|
+| 🌙 Dark theme | Easy on the eyes, optimized for monitoring |
+| 📱 Channel badges | Color-coded: Telegram (blue), Discord (purple), WhatsApp (green) |
+| 📊 Progress bars | Context usage with green/yellow/red thresholds |
+| 🔔 Toast notifications | Non-intrusive status updates |
+| 💫 Custom modals | Beautiful confirmation dialogs with animations |
+| ⚡ Real-time updates | WebSocket-powered live log streaming |
 
 ## 🛠️ Tech Stack
 
-- **Backend:** Node.js + Express + WebSocket (ws)
-- **Frontend:** Vanilla HTML/CSS/JS (no frameworks!)
-- **Search:** Server-side grep (~6ms for 5MB logs)
+- **Backend**: Node.js, Express
+- **Frontend**: Vanilla JS, CSS3
+- **Real-time**: WebSocket (ws)
+- **Process**: PM2 (optional)
 
-## 📡 API Reference
+## 📁 Project Structure
 
-### REST Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/status` | Gateway status |
-| `POST` | `/api/gateway/start` | Start gateway |
-| `POST` | `/api/gateway/stop` | Stop gateway |
-| `POST` | `/api/gateway/restart` | Restart gateway |
-| `GET` | `/api/logs/files` | List log files |
-| `GET` | `/api/logs/search?q=error` | Search logs |
-
-### WebSocket
-
-Connect to `ws://localhost:3456` for real-time streaming.
-
-```javascript
-// Switch log file
-ws.send(JSON.stringify({ 
-  type: 'switch-log', 
-  file: 'openclaw-2026-02-04.log',
-  dir: '/tmp/openclaw'
-}));
-
-// Refresh current log
-ws.send(JSON.stringify({ type: 'refresh' }));
 ```
-
-## 📁 Log Sources
-
-| Directory | Contents |
-|-----------|----------|
-| `/tmp/openclaw/` | Gateway runtime logs |
-| `~/.openclaw/logs/` | Command & session logs |
+openclaw-dashboard/
+├── server.js           # Express server + API routes
+├── public/
+│   └── index.html      # Single-page dashboard app
+├── screenshots/        # README images
+└── package.json
+```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to:
-
-1. 🍴 Fork the repo
-2. 🌿 Create a branch (`git checkout -b feature/awesome`)
-3. 💾 Commit changes (`git commit -m 'Add awesome feature'`)
-4. 📤 Push (`git push origin feature/awesome`)
-5. 🎉 Open a Pull Request
-
-## 💬 Community
-
-- 🐛 [Report bugs](https://github.com/CharlesYWL/openclaw-dashboard/issues)
-- 💡 [Request features](https://github.com/CharlesYWL/openclaw-dashboard/issues)
-- 🌟 Star the repo if you find it useful!
+Contributions welcome! Feel free to:
+- 🐛 Report bugs
+- 💡 Suggest features
+- 🔧 Submit pull requests
 
 ## 📄 License
 
-[MIT](LICENSE) © 2026 Charles Yin
+MIT License - see [LICENSE](LICENSE) for details.
+
+## 🔗 Links
+
+- [OpenClaw](https://github.com/openclaw/openclaw) - The AI agent framework
+- [OpenClaw Docs](https://docs.openclaw.ai) - Official documentation
+- [Discord Community](https://discord.com/invite/clawd) - Get help & chat
 
 ---
 
-<p align="center">
-  Built for <a href="https://github.com/openclaw/openclaw">OpenClaw</a> 🐾
-</p>
+Made with ❤️ for the OpenClaw community
