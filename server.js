@@ -1063,6 +1063,7 @@ app.get('/api/agents/:id/sessions', async (req, res) => {
       age: s.age,
       model: s.model,
       totalTokens: s.totalTokens,
+      contextTokens: s.contextTokens || 128000,
       percentUsed: s.percentUsed
     }));
 

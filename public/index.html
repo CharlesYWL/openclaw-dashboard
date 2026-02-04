@@ -629,10 +629,43 @@
     .session-percent.medium { background: rgba(250, 204, 21, 0.2); color: #facc15; }
     .session-percent.high { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 
+    .session-channel-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .session-channel-badge.telegram { background: rgba(0, 136, 204, 0.2); color: #0088cc; }
+    .session-channel-badge.discord { background: rgba(88, 101, 242, 0.2); color: #5865f2; }
+    .session-channel-badge.whatsapp { background: rgba(37, 211, 102, 0.2); color: #25d366; }
+    .session-channel-badge.main { background: rgba(74, 222, 128, 0.2); color: var(--green); }
+    .session-channel-badge.subagent { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+    .session-channel-badge.cron { background: rgba(250, 204, 21, 0.2); color: #facc15; }
+
+    .session-item.telegram { border-left: 3px solid #0088cc; }
+    .session-item.discord { border-left: 3px solid #5865f2; }
+    .session-item.whatsapp { border-left: 3px solid #25d366; }
+    .session-item.main { border-left: 3px solid var(--green); }
+    .session-item.subagent { border-left: 3px solid #a855f7; }
+    .session-item.cron { border-left: 3px solid #facc15; }
+
+    .session-key-row {
+      margin: 6px 0;
+    }
+
+    .session-tokens {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-family: monospace;
+    }
+
     .session-key {
       color: var(--blue);
       font-family: monospace;
-      max-width: 70%;
+      font-size: 11px;
+      max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1150,6 +1183,12 @@
       return `${diffDays}d ago`;
     }
 
+    function formatNumber(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
+    }
+
     function formatBytes(bytes) {
       if (bytes === 0) return '0 B';
       const k = 1024;
@@ -1490,16 +1529,31 @@
             const time = s.updatedAt ? formatRelativeTime(s.updatedAt) : '--';
             const model = s.model || 'unknown';
             const percent = s.percentUsed || 0;
+            const totalTokens = s.totalTokens || 0;
+            const contextTokens = s.contextTokens || 128000;
             const percentClass = percent >= 80 ? 'high' : percent >= 50 ? 'medium' : 'low';
             const sessionId = s.sessionId || s.id || '';
+            const channel = s.channel || 'unknown';
+            const channelEmoji = {
+              'telegram': '📱',
+              'discord': '💬',
+              'whatsapp': '📲',
+              'main': '🖥️',
+              'subagent': '🤖',
+              'cron': '⏰'
+            }[channel] || '📡';
             return `
-              <div class="session-item" onclick="viewSessionLog('${escapeHtml(sessionId)}')" title="Click to view logs">
+              <div class="session-item ${channel}" onclick="viewSessionLog('${escapeHtml(sessionId)}')" title="Click to view logs">
                 <div class="session-main">
-                  <span class="session-key">${escapeHtml(shortKey)}</span>
+                  <span class="session-channel-badge ${channel}">${channelEmoji} ${channel}</span>
                   <span class="session-time">${time}</span>
+                </div>
+                <div class="session-key-row">
+                  <span class="session-key">${escapeHtml(shortKey)}</span>
                 </div>
                 <div class="session-details">
                   <span class="session-model">🤖 ${escapeHtml(model)}</span>
+                  <span class="session-tokens">${formatNumber(totalTokens)} / ${formatNumber(contextTokens)}</span>
                   <span class="session-percent ${percentClass}">${percent}%</span>
                 </div>
               </div>
