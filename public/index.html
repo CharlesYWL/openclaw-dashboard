@@ -11,11 +11,32 @@
       box-sizing: border-box;
     }
 
+    :root {
+      --bg-primary: #0f0f0f;
+      --bg-secondary: #1a1a1a;
+      --bg-tertiary: #252525;
+      --border-color: #333;
+      --text-primary: #e0e0e0;
+      --text-secondary: #888;
+      --text-muted: #6b7280;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f5f5f5;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e5e5e5;
+      --border-color: #d1d5db;
+      --text-primary: #1f2937;
+      --text-secondary: #4b5563;
+      --text-muted: #6b7280;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: #0f0f0f;
-      color: #e0e0e0;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
     }
 
     .container {
@@ -24,19 +45,95 @@
       padding: 20px;
     }
 
+    /* System Metrics Bar */
+    .metrics-bar {
+      display: flex;
+      gap: 24px;
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .metric-item {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .metric-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .metric-progress {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .metric-progress-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease, background 0.3s;
+    }
+
+    .metric-progress-bar.cpu { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .metric-progress-bar.memory { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+    .metric-progress-bar.disk { background: linear-gradient(90deg, #10b981, #34d399); }
+
+    .metric-progress-bar.warning { background: linear-gradient(90deg, #f59e0b, #fbbf24) !important; }
+    .metric-progress-bar.critical { background: linear-gradient(90deg, #ef4444, #f87171) !important; }
+
+    .metric-details {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
       padding-bottom: 20px;
-      border-bottom: 1px solid #333;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
 
     h1 {
       font-size: 24px;
       font-weight: 600;
-      color: #fff;
+      color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -44,6 +141,43 @@
 
     h1 .logo {
       font-size: 28px;
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle:hover {
+      background: var(--bg-tertiary);
+      transform: scale(1.05);
+    }
+
+    /* Logout Button */
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #991b1b;
+      border-color: #991b1b;
+      color: #fff;
     }
 
     .status-badge {
@@ -138,7 +272,7 @@
       display: flex;
       gap: 4px;
       margin-bottom: 16px;
-      background: #1a1a1a;
+      background: var(--bg-secondary);
       padding: 4px;
       border-radius: 10px;
       width: fit-content;
@@ -147,7 +281,7 @@
     .tab-btn {
       padding: 10px 24px;
       background: transparent;
-      color: #888;
+      color: var(--text-secondary);
       border: none;
       border-radius: 8px;
       font-size: 14px;
@@ -157,13 +291,13 @@
     }
 
     .tab-btn:hover {
-      color: #e0e0e0;
-      background: #252525;
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
     }
 
     .tab-btn.active {
-      background: #333;
-      color: #fff;
+      background: var(--border-color);
+      color: var(--text-primary);
     }
 
     .log-controls {
@@ -181,25 +315,25 @@
     select {
       padding: 8px 12px;
       border-radius: 6px;
-      border: 1px solid #333;
-      background: #1a1a1a;
-      color: #e0e0e0;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
       font-size: 13px;
       cursor: pointer;
       max-width: 400px;
     }
 
     .log-viewer {
-      background: #1a1a1a;
-      border: 1px solid #333;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
       border-radius: 12px;
       overflow: hidden;
     }
 
     .log-header {
       padding: 12px 16px;
-      background: #252525;
-      border-bottom: 1px solid #333;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -209,7 +343,7 @@
 
     .log-header span {
       font-size: 13px;
-      color: #888;
+      color: var(--text-secondary);
     }
 
     .connection-status {
@@ -237,6 +371,7 @@
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: 13px;
       line-height: 1.6;
+      background: var(--bg-secondary);
     }
 
     .log-line {
@@ -267,20 +402,41 @@
       overflow-x: auto;
     }
 
+    [data-theme="light"] .json-container {
+      background: #f6f8fa;
+      border-color: #d0d7de;
+    }
+
     .json-key {
       color: #7ee787;
+    }
+
+    [data-theme="light"] .json-key {
+      color: #116329;
     }
 
     .json-string {
       color: #a5d6ff;
     }
 
+    [data-theme="light"] .json-string {
+      color: #0a3069;
+    }
+
     .json-number {
       color: #ffa657;
     }
 
+    [data-theme="light"] .json-number {
+      color: #953800;
+    }
+
     .json-boolean {
       color: #ff7b72;
+    }
+
+    [data-theme="light"] .json-boolean {
+      color: #cf222e;
     }
 
     .json-null {
@@ -291,8 +447,16 @@
       color: #c9d1d9;
     }
 
+    [data-theme="light"] .json-brace {
+      color: #24292f;
+    }
+
     .json-bracket {
       color: #c9d1d9;
+    }
+
+    [data-theme="light"] .json-bracket {
+      color: #24292f;
     }
 
     .json-colon {
@@ -306,7 +470,7 @@
     /* Session Log Styles */
     .session-entry {
       margin-bottom: 12px;
-      border-left: 3px solid #333;
+      border-left: 3px solid var(--border-color);
       padding-left: 12px;
     }
 
@@ -356,11 +520,11 @@
     .entry-type.error { background: #450a0a; color: #f87171; }
 
     .entry-timestamp {
-      color: #6b7280;
+      color: var(--text-muted);
     }
 
     .entry-id {
-      color: #6b7280;
+      color: var(--text-muted);
       font-family: monospace;
     }
 
@@ -373,7 +537,7 @@
     }
 
     .session-info {
-      background: #252525;
+      background: var(--bg-tertiary);
       padding: 12px 16px;
       border-radius: 8px;
       margin-bottom: 16px;
@@ -390,13 +554,13 @@
 
     .session-info-label {
       font-size: 11px;
-      color: #6b7280;
+      color: var(--text-muted);
       text-transform: uppercase;
     }
 
     .session-info-value {
       font-size: 13px;
-      color: #e0e0e0;
+      color: var(--text-primary);
       font-family: monospace;
     }
 
@@ -447,7 +611,7 @@
       align-items: center;
       gap: 6px;
       font-size: 13px;
-      color: #888;
+      color: var(--text-secondary);
     }
 
     .auto-scroll-toggle input {
@@ -459,7 +623,7 @@
       justify-content: center;
       align-items: center;
       padding: 40px;
-      color: #6b7280;
+      color: var(--text-muted);
     }
 
     .loading .spinner {
@@ -482,9 +646,9 @@
       padding: 8px 12px;
       padding-left: 36px;
       border-radius: 8px;
-      border: 1px solid #333;
-      background: #1a1a1a;
-      color: #e0e0e0;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
       font-size: 13px;
       font-family: inherit;
       transition: border-color 0.2s, box-shadow 0.2s;
@@ -497,7 +661,7 @@
     }
 
     .search-input::placeholder {
-      color: #6b7280;
+      color: var(--text-muted);
     }
 
     .search-wrapper {
@@ -510,7 +674,7 @@
       left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      color: #6b7280;
+      color: var(--text-muted);
       pointer-events: none;
       font-size: 14px;
     }
@@ -522,7 +686,7 @@
       transform: translateY(-50%);
       background: none;
       border: none;
-      color: #6b7280;
+      color: var(--text-muted);
       cursor: pointer;
       padding: 4px;
       font-size: 14px;
@@ -532,8 +696,8 @@
     }
 
     .search-clear:hover {
-      color: #e0e0e0;
-      background: #333;
+      color: var(--text-primary);
+      background: var(--border-color);
     }
 
     .search-input:not(:placeholder-shown) + .search-clear {
@@ -542,20 +706,20 @@
 
     .search-stats {
       font-size: 12px;
-      color: #6b7280;
+      color: var(--text-muted);
       white-space: nowrap;
     }
 
     .search-help {
       font-size: 11px;
-      color: #6b7280;
+      color: var(--text-muted);
       padding: 8px 16px;
-      background: #1f1f1f;
-      border-bottom: 1px solid #333;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border-color);
     }
 
     .search-help code {
-      background: #333;
+      background: var(--border-color);
       padding: 1px 4px;
       border-radius: 3px;
       color: #a78bfa;
@@ -569,6 +733,11 @@
       padding: 0 1px;
     }
 
+    [data-theme="light"] .search-match {
+      background: rgba(250, 204, 21, 0.5);
+      color: #854d0e;
+    }
+
     .log-line.hidden,
     .session-entry.hidden {
       display: none;
@@ -577,7 +746,7 @@
     .no-results {
       text-align: center;
       padding: 40px;
-      color: #6b7280;
+      color: var(--text-muted);
     }
 
     .no-results .no-results-icon {
@@ -612,14 +781,14 @@
     .load-more-container {
       text-align: center;
       padding: 12px;
-      background: #1f1f1f;
-      border-top: 1px solid #333;
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border-color);
     }
 
     .load-more-btn {
       padding: 8px 24px;
       background: #374151;
-      color: #e0e0e0;
+      color: var(--text-primary);
       border: 1px solid #4b5563;
       border-radius: 6px;
       font-size: 13px;
@@ -638,19 +807,58 @@
 
     .truncation-notice {
       font-size: 11px;
-      color: #6b7280;
+      color: var(--text-muted);
       margin-top: 4px;
     }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- System Metrics Bar -->
+    <div class="metrics-bar">
+      <div class="metric-item">
+        <div class="metric-header">
+          <span class="metric-label">💻 CPU</span>
+          <span class="metric-value" id="cpu-value">--%</span>
+        </div>
+        <div class="metric-progress">
+          <div class="metric-progress-bar cpu" id="cpu-bar" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-header">
+          <span class="metric-label">🧠 Memory</span>
+          <span class="metric-value" id="memory-value">--%</span>
+        </div>
+        <div class="metric-progress">
+          <div class="metric-progress-bar memory" id="memory-bar" style="width: 0%"></div>
+        </div>
+        <div class="metric-details" id="memory-details">-- / --</div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-header">
+          <span class="metric-label">💾 Disk</span>
+          <span class="metric-value" id="disk-value">--%</span>
+        </div>
+        <div class="metric-progress">
+          <div class="metric-progress-bar disk" id="disk-bar" style="width: 0%"></div>
+        </div>
+        <div class="metric-details" id="disk-details">-- / --</div>
+      </div>
+    </div>
+
     <header>
-      <h1>
-        <span class="logo">🦞</span>
-        OpenClaw Gateway
-      </h1>
-      <span id="status-badge" class="status-badge status-unknown">Checking...</span>
+      <div class="header-left">
+        <h1>
+          <span class="logo">🦞</span>
+          OpenClaw Gateway
+        </h1>
+        <span id="status-badge" class="status-badge status-unknown">Checking...</span>
+      </div>
+      <div class="header-right">
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
     </header>
 
     <div class="controls">
@@ -744,6 +952,91 @@
   <div id="toast" class="toast"></div>
 
   <script>
+    // ===== Theme Management =====
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeButton(savedTheme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeButton(newTheme);
+    }
+
+    function updateThemeButton(theme) {
+      const btn = document.getElementById('theme-toggle');
+      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+      btn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    }
+
+    // ===== System Metrics =====
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function updateProgressBarColor(bar, percent) {
+      bar.classList.remove('warning', 'critical');
+      if (percent >= 90) {
+        bar.classList.add('critical');
+      } else if (percent >= 75) {
+        bar.classList.add('warning');
+      }
+    }
+
+    async function fetchMetrics() {
+      try {
+        const response = await fetch('/api/metrics');
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        const data = await response.json();
+        
+        // CPU
+        document.getElementById('cpu-value').textContent = data.cpu + '%';
+        const cpuBar = document.getElementById('cpu-bar');
+        cpuBar.style.width = data.cpu + '%';
+        updateProgressBarColor(cpuBar, data.cpu);
+        
+        // Memory
+        document.getElementById('memory-value').textContent = data.memory.percent + '%';
+        const memBar = document.getElementById('memory-bar');
+        memBar.style.width = data.memory.percent + '%';
+        updateProgressBarColor(memBar, data.memory.percent);
+        document.getElementById('memory-details').textContent = 
+          formatBytes(data.memory.used) + ' / ' + formatBytes(data.memory.total);
+        
+        // Disk
+        document.getElementById('disk-value').textContent = data.disk.percent + '%';
+        const diskBar = document.getElementById('disk-bar');
+        diskBar.style.width = data.disk.percent + '%';
+        updateProgressBarColor(diskBar, data.disk.percent);
+        document.getElementById('disk-details').textContent = 
+          formatBytes(data.disk.used) + ' / ' + formatBytes(data.disk.total);
+      } catch (err) {
+        console.error('Error fetching metrics:', err);
+      }
+    }
+
+    // ===== Logout =====
+    async function logout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+      } catch (err) {
+        console.error('Logout error:', err);
+        window.location.href = '/login';
+      }
+    }
+
     // ===== State =====
     let ws = null;
     let currentTab = 'gateway';
@@ -1404,10 +1697,13 @@
     }
 
     // ===== Initialize =====
+    initTheme();
     connectWebSocket();
     checkStatus();
     loadLogFiles();
+    fetchMetrics();
     setInterval(checkStatus, 30000);
+    setInterval(fetchMetrics, 5000);  // Refresh metrics every 5 seconds
   </script>
 </body>
 </html>

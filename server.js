@@ -6,6 +6,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const readline = require('readline');
+const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
 
 // Global error handlers to prevent crashes
 process.on('uncaughtException', (err) => {
@@ -21,6 +23,36 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const PORT = 3456;
+const AUTH_FILE = path.join(__dirname, 'auth.json');
+const SESSION_SECRET = crypto.randomBytes(32).toString('hex');
+
+// Initialize or load authentication
+let authConfig = null;
+function initAuth() {
+  if (fs.existsSync(AUTH_FILE)) {
+    try {
+      authConfig = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf-8'));
+    } catch (err) {
+      console.error('[AUTH] Error reading auth.json:', err.message);
+    }
+  }
+  
+  if (!authConfig || !authConfig.password) {
+    // Generate random password
+    const password = crypto.randomBytes(16).toString('hex');
+    authConfig = { password, createdAt: new Date().toISOString() };
+    fs.writeFileSync(AUTH_FILE, JSON.stringify(authConfig, null, 2));
+    console.log('\n' + '='.repeat(60));
+    console.log('🔐 DASHBOARD PASSWORD GENERATED');
+    console.log('='.repeat(60));
+    console.log(`Password: ${password}`);
+    console.log('='.repeat(60) + '\n');
+  }
+}
+initAuth();
+
+// Simple session storage (in-memory)
+const sessions = new Map();
 const LOGS_DIRS = [
   '/tmp/openclaw',  // Main gateway logs
   path.join(os.homedir(), '.openclaw', 'logs')  // Command logs
@@ -35,6 +67,225 @@ const MAX_LIMIT = 1000;
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+app.use(cookieParser());
+
+// Authentication middleware
+function requireAuth(req, res, next) {
+  const sessionId = req.cookies.session;
+  if (sessionId && sessions.has(sessionId)) {
+    next();
+  } else {
+    if (req.path.startsWith('/api/')) {
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+    } else {
+      res.redirect('/login');
+    }
+  }
+}
+
+// Login page
+app.get('/login', (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - OpenClaw Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-container {
+      background: #1a1a1a;
+      padding: 40px;
+      border-radius: 16px;
+      border: 1px solid #333;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .logo { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    .subtitle { color: #888; margin-bottom: 32px; font-size: 14px; }
+    .form-group { margin-bottom: 20px; text-align: left; }
+    label { display: block; margin-bottom: 8px; font-size: 14px; color: #888; }
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-size: 16px;
+    }
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #60a5fa;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #1d4ed8; }
+    .error {
+      background: #451a1a;
+      border: 1px solid #6a2d2d;
+      color: #f87171;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+    .error.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">🦞</div>
+    <h1>OpenClaw Dashboard</h1>
+    <p class="subtitle">Enter your password to continue</p>
+    <div id="error" class="error"></div>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autofocus>
+      </div>
+      <button type="submit">Login</button>
+    </form>
+  </div>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      const error = document.getElementById('error');
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = '/';
+        } else {
+          error.textContent = data.message || 'Invalid password';
+          error.classList.add('show');
+        }
+      } catch (err) {
+        error.textContent = 'Connection error';
+        error.classList.add('show');
+      }
+    });
+  </script>
+</body>
+</html>
+  `);
+});
+
+// Login API
+app.post('/api/auth/login', (req, res) => {
+  const { password } = req.body;
+  if (password === authConfig.password) {
+    const sessionId = crypto.randomBytes(32).toString('hex');
+    sessions.set(sessionId, { createdAt: Date.now() });
+    res.cookie('session', sessionId, { 
+      httpOnly: true, 
+      maxAge: 7 * 24 * 60 * 60 * 1000,  // 7 days
+      sameSite: 'strict'
+    });
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, message: 'Invalid password' });
+  }
+});
+
+// Logout API
+app.post('/api/auth/logout', (req, res) => {
+  const sessionId = req.cookies.session;
+  if (sessionId) {
+    sessions.delete(sessionId);
+  }
+  res.clearCookie('session');
+  res.json({ success: true });
+});
+
+// Protected routes - all below this point require auth
+app.use((req, res, next) => {
+  // Allow login page and auth endpoints
+  if (req.path === '/login' || req.path.startsWith('/api/auth/')) {
+    return next();
+  }
+  requireAuth(req, res, next);
+});
+
+// System metrics API
+app.get('/api/metrics', (req, res) => {
+  try {
+    // CPU usage (average of all cores)
+    const cpus = os.cpus();
+    let totalIdle = 0, totalTick = 0;
+    for (const cpu of cpus) {
+      for (const type in cpu.times) {
+        totalTick += cpu.times[type];
+      }
+      totalIdle += cpu.times.idle;
+    }
+    const cpuPercent = Math.round((1 - totalIdle / totalTick) * 100);
+    
+    // Memory usage
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const memPercent = Math.round((usedMem / totalMem) * 100);
+    
+    // Disk usage (using df command)
+    let disk = { used: 0, total: 0, percent: 0 };
+    try {
+      const dfOutput = execSync('df -k / | tail -1', { encoding: 'utf-8' });
+      const parts = dfOutput.trim().split(/\s+/);
+      if (parts.length >= 5) {
+        disk.total = parseInt(parts[1]) * 1024;
+        disk.used = parseInt(parts[2]) * 1024;
+        disk.percent = parseInt(parts[4].replace('%', '')) || Math.round((disk.used / disk.total) * 100);
+      }
+    } catch (err) {
+      console.error('[METRICS] Disk error:', err.message);
+    }
+    
+    res.json({
+      cpu: cpuPercent,
+      memory: {
+        used: usedMem,
+        total: totalMem,
+        percent: memPercent
+      },
+      disk: {
+        used: disk.used,
+        total: disk.total,
+        percent: disk.percent
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // Get all log files from all directories
 function getAllLogFiles() {
