@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenClaw Gateway Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #333;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 .logo {
+      font-size: 28px;
+    }
+
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-running {
+      background: #1a4d1a;
+      color: #4ade80;
+      border: 1px solid #2d6a2d;
+    }
+
+    .status-stopped {
+      background: #4d1a1a;
+      color: #f87171;
+      border: 1px solid #6a2d2d;
+    }
+
+    .status-unknown {
+      background: #4d4d1a;
+      color: #fbbf24;
+      border: 1px solid #6a6a2d;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-start {
+      background: #166534;
+      color: #fff;
+    }
+
+    .btn-start:hover:not(:disabled) {
+      background: #15803d;
+    }
+
+    .btn-stop {
+      background: #991b1b;
+      color: #fff;
+    }
+
+    .btn-stop:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+
+    .btn-restart {
+      background: #1e40af;
+      color: #fff;
+    }
+
+    .btn-restart:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    .btn-refresh {
+      background: #374151;
+      color: #fff;
+    }
+
+    .btn-refresh:hover:not(:disabled) {
+      background: #4b5563;
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      background: #1a1a1a;
+      padding: 4px;
+      border-radius: 10px;
+      width: fit-content;
+    }
+
+    .tab-btn {
+      padding: 10px 24px;
+      background: transparent;
+      color: #888;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: #e0e0e0;
+      background: #252525;
+    }
+
+    .tab-btn.active {
+      background: #333;
+      color: #fff;
+    }
+
+    .log-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .log-controls h2 {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      font-size: 13px;
+      cursor: pointer;
+      max-width: 400px;
+    }
+
+    .log-viewer {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .log-header {
+      padding: 12px 16px;
+      background: #252525;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .log-header span {
+      font-size: 13px;
+      color: #888;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f87171;
+    }
+
+    .connection-dot.connected {
+      background: #4ade80;
+    }
+
+    #log-container, #session-log-container {
+      height: 500px;
+      overflow-y: auto;
+      padding: 16px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .log-line {
+      margin: 2px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .log-line.error {
+      color: #f87171;
+    }
+
+    .log-line.warn {
+      color: #fbbf24;
+    }
+
+    .log-line.info {
+      color: #60a5fa;
+    }
+
+    /* JSON Syntax Highlighting */
+    .json-container {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 4px 0;
+      overflow-x: auto;
+    }
+
+    .json-key {
+      color: #7ee787;
+    }
+
+    .json-string {
+      color: #a5d6ff;
+    }
+
+    .json-number {
+      color: #ffa657;
+    }
+
+    .json-boolean {
+      color: #ff7b72;
+    }
+
+    .json-null {
+      color: #8b949e;
+    }
+
+    .json-brace {
+      color: #c9d1d9;
+    }
+
+    .json-bracket {
+      color: #c9d1d9;
+    }
+
+    .json-colon {
+      color: #c9d1d9;
+    }
+
+    .json-comma {
+      color: #c9d1d9;
+    }
+
+    /* Session Log Styles */
+    .session-entry {
+      margin-bottom: 12px;
+      border-left: 3px solid #333;
+      padding-left: 12px;
+    }
+
+    .session-entry.type-message {
+      border-left-color: #60a5fa;
+    }
+
+    .session-entry.type-tool_use {
+      border-left-color: #fbbf24;
+    }
+
+    .session-entry.type-tool_result {
+      border-left-color: #4ade80;
+    }
+
+    .session-entry.type-session {
+      border-left-color: #a78bfa;
+    }
+
+    .session-entry.type-error {
+      border-left-color: #f87171;
+    }
+
+    .session-entry-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .entry-type {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 10px;
+    }
+
+    .entry-type.message { background: #1e3a5f; color: #60a5fa; }
+    .entry-type.tool_use { background: #422006; color: #fbbf24; }
+    .entry-type.tool_result { background: #14532d; color: #4ade80; }
+    .entry-type.session { background: #3b0764; color: #a78bfa; }
+    .entry-type.model_change { background: #164e63; color: #22d3ee; }
+    .entry-type.thinking_level_change { background: #365314; color: #bef264; }
+    .entry-type.custom { background: #374151; color: #9ca3af; }
+    .entry-type.error { background: #450a0a; color: #f87171; }
+
+    .entry-timestamp {
+      color: #6b7280;
+    }
+
+    .entry-id {
+      color: #6b7280;
+      font-family: monospace;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .session-info {
+      background: #252525;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .session-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .session-info-label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+    }
+
+    .session-info-value {
+      font-size: 13px;
+      color: #e0e0e0;
+      font-family: monospace;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: #1f2937;
+      color: #fff;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: #166534;
+    }
+
+    .toast.error {
+      background: #991b1b;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid transparent;
+      border-top: 2px solid currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .auto-scroll-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .auto-scroll-toggle input {
+      cursor: pointer;
+    }
+
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    .loading .spinner {
+      width: 24px;
+      height: 24px;
+      margin-right: 12px;
+    }
+
+    /* Search Styles */
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 400px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 8px 12px;
+      padding-left: 36px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    }
+
+    .search-input::placeholder {
+      color: #6b7280;
+    }
+
+    .search-wrapper {
+      position: relative;
+      flex: 1;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b7280;
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 14px;
+      line-height: 1;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .search-clear:hover {
+      color: #e0e0e0;
+      background: #333;
+    }
+
+    .search-input:not(:placeholder-shown) + .search-clear {
+      display: block;
+    }
+
+    .search-stats {
+      font-size: 12px;
+      color: #6b7280;
+      white-space: nowrap;
+    }
+
+    .search-help {
+      font-size: 11px;
+      color: #6b7280;
+      padding: 8px 16px;
+      background: #1f1f1f;
+      border-bottom: 1px solid #333;
+    }
+
+    .search-help code {
+      background: #333;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #a78bfa;
+    }
+
+    /* Match highlighting */
+    .search-match {
+      background: rgba(250, 204, 21, 0.3);
+      color: #fde047;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    .log-line.hidden,
+    .session-entry.hidden {
+      display: none;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    .no-results .no-results-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .no-results .no-results-text {
+      font-size: 14px;
+    }
+
+    .no-results .no-results-hint {
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* Loading indicator for search */
+    .search-loading {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #fbbf24;
+    }
+
+    .search-loading .spinner {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Load more button */
+    .load-more-container {
+      text-align: center;
+      padding: 12px;
+      background: #1f1f1f;
+      border-top: 1px solid #333;
+    }
+
+    .load-more-btn {
+      padding: 8px 24px;
+      background: #374151;
+      color: #e0e0e0;
+      border: 1px solid #4b5563;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .load-more-btn:hover {
+      background: #4b5563;
+    }
+
+    .load-more-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .truncation-notice {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>
+        <span class="logo">🦞</span>
+        OpenClaw Gateway
+      </h1>
+      <span id="status-badge" class="status-badge status-unknown">Checking...</span>
+    </header>
+
+    <div class="controls">
+      <button id="btn-start" class="btn-start" onclick="gatewayAction('start')">
+        <span>▶</span> Start
+      </button>
+      <button id="btn-stop" class="btn-stop" onclick="gatewayAction('stop')">
+        <span>■</span> Stop
+      </button>
+      <button id="btn-restart" class="btn-restart" onclick="gatewayAction('restart')">
+        <span>↻</span> Restart
+      </button>
+      <button id="btn-refresh-status" class="btn-refresh" onclick="checkStatus()">
+        <span>🔄</span> Refresh Status
+      </button>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('gateway')">📋 Gateway Logs</button>
+      <button class="tab-btn" onclick="switchTab('sessions')">💬 Session Logs</button>
+    </div>
+
+    <!-- Gateway Logs Tab -->
+    <div id="gateway-tab" class="tab-content active">
+      <div class="log-viewer">
+        <div class="log-header">
+          <div class="log-controls">
+            <span>Log File: </span>
+            <select id="log-file-select" onchange="switchLogFile()">
+              <option value="">Loading...</option>
+            </select>
+          </div>
+          <div class="search-container">
+            <div class="search-wrapper">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" id="gateway-search" placeholder="Search logs... (e.g., error, level:info)" oninput="filterGatewayLogs()">
+              <button class="search-clear" onclick="clearGatewaySearch()">✕</button>
+            </div>
+            <span class="search-stats" id="gateway-search-stats"></span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <label class="auto-scroll-toggle">
+              <input type="checkbox" id="auto-scroll" checked>
+              Auto-scroll
+            </label>
+            <div class="connection-status">
+              <div id="connection-dot" class="connection-dot"></div>
+              <span id="connection-text">Disconnected</span>
+            </div>
+          </div>
+        </div>
+        <div class="search-help" id="gateway-search-help" style="display: none;">
+          💡 Tip: Use <code>field:value</code> for specific fields (e.g., <code>level:error</code>, <code>type:request</code>) or just type to search everywhere
+        </div>
+        <div id="log-container"></div>
+      </div>
+    </div>
+
+    <!-- Session Logs Tab -->
+    <div id="sessions-tab" class="tab-content">
+      <div class="log-viewer">
+        <div class="log-header">
+          <div class="log-controls">
+            <span>Session: </span>
+            <select id="session-file-select" onchange="loadSessionLog()">
+              <option value="">Select a session...</option>
+            </select>
+          </div>
+          <div class="search-container">
+            <div class="search-wrapper">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" id="session-search" placeholder="Search session... (e.g., role:user, type:tool_use)" oninput="filterSessionLogs()">
+              <button class="search-clear" onclick="clearSessionSearch()">✕</button>
+            </div>
+            <span class="search-stats" id="session-search-stats"></span>
+          </div>
+          <button class="btn-refresh" onclick="loadSessionFiles()" style="padding: 6px 12px; font-size: 12px;">
+            🔄 Refresh
+          </button>
+        </div>
+        <div class="search-help" id="session-search-help" style="display: none;">
+          💡 Tip: Use <code>field:value</code> for specific fields (e.g., <code>role:user</code>, <code>type:tool_use</code>, <code>name:read</code>) or just type to search everywhere
+        </div>
+        <div id="session-info-container"></div>
+        <div id="session-log-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ===== State =====
+    let ws = null;
+    let currentTab = 'gateway';
+    let currentLogFile = null;
+    let currentSessionId = null;
+    let sessionTotalLines = 0;
+    
+    // Debounce timers
+    let gatewaySearchTimer = null;
+    let sessionSearchTimer = null;
+    
+    // Constants
+    const DEBOUNCE_MS = 300;
+    const SEARCH_LIMIT = 200;
+    const INITIAL_LIMIT = 500;
+    
+    // DOM elements
+    const logContainer = document.getElementById('log-container');
+    const sessionLogContainer = document.getElementById('session-log-container');
+    const sessionInfoContainer = document.getElementById('session-info-container');
+    const connectionDot = document.getElementById('connection-dot');
+    const connectionText = document.getElementById('connection-text');
+    const statusBadge = document.getElementById('status-badge');
+    const logFileSelect = document.getElementById('log-file-select');
+    const sessionFileSelect = document.getElementById('session-file-select');
+
+    // ===== Utility Functions =====
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+    
+    function setSearchLoading(statsId, loading) {
+      const el = document.getElementById(statsId);
+      if (loading) {
+        el.innerHTML = '<span class="search-loading"><span class="spinner"></span> Searching...</span>';
+      }
+    }
+
+    // ===== JSON Syntax Highlighting =====
+    
+    function syntaxHighlightJSON(json) {
+      if (typeof json !== 'string') {
+        json = JSON.stringify(json, null, 2);
+      }
+      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
+      return json.replace(
+        /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}\[\],:])/g,
+        function (match) {
+          let cls = 'json-number';
+          if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+              cls = 'json-key';
+              return '<span class="' + cls + '">' + match.slice(0, -1) + '</span><span class="json-colon">:</span>';
+            } else {
+              cls = 'json-string';
+            }
+          } else if (/true|false/.test(match)) {
+            cls = 'json-boolean';
+          } else if (/null/.test(match)) {
+            cls = 'json-null';
+          } else if (/[{}]/.test(match)) {
+            cls = 'json-brace';
+          } else if (/[\[\]]/.test(match)) {
+            cls = 'json-bracket';
+          } else if (/[,]/.test(match)) {
+            cls = 'json-comma';
+          }
+          return '<span class="' + cls + '">' + match + '</span>';
+        }
+      );
+    }
+
+    // Extract search terms from query
+    function extractSearchTerms(query) {
+      if (!query) return [];
+      
+      const terms = [];
+      const fieldRegex = /(\w+):(?:"([^"]+)"|'([^']+)'|(\S+))/g;
+      let match;
+      let remaining = query;
+      
+      while ((match = fieldRegex.exec(query)) !== null) {
+        terms.push(match[2] || match[3] || match[4]);
+        remaining = remaining.replace(match[0], '');
+      }
+      terms.push(...remaining.trim().split(/\s+/).filter(t => t));
+      
+      // Sort by length (longest first) to avoid partial replacements
+      return terms.filter(t => t).sort((a, b) => b.length - a.length);
+    }
+    
+    // Highlight search terms in text
+    function highlightTerms(text, query) {
+      if (!text || !query) return escapeHtml(text);
+      
+      const terms = extractSearchTerms(query);
+      let result = escapeHtml(text);
+      
+      for (const term of terms) {
+        if (!term) continue;
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escaped})`, 'gi');
+        result = result.replace(regex, '<span class="search-match">$1</span>');
+      }
+      return result;
+    }
+    
+    // Highlight search terms in already-rendered HTML (preserves existing tags)
+    function highlightInHtml(html, query) {
+      if (!html || !query) return html;
+      
+      const terms = extractSearchTerms(query);
+      if (terms.length === 0) return html;
+      
+      // Only highlight text content, not inside HTML tags
+      // Split by HTML tags, highlight text parts, rejoin
+      const tagRegex = /(<[^>]+>)/g;
+      const parts = html.split(tagRegex);
+      
+      for (let i = 0; i < parts.length; i++) {
+        // Skip HTML tags (odd indices after split with capturing group)
+        if (parts[i].startsWith('<')) continue;
+        
+        // Highlight text content
+        for (const term of terms) {
+          if (!term) continue;
+          const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(${escaped})`, 'gi');
+          parts[i] = parts[i].replace(regex, '<span class="search-match">$1</span>');
+        }
+      }
+      
+      return parts.join('');
+    }
+
+    // ===== Rendering Functions =====
+    
+    function renderLogLine(item, query = '') {
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      
+      if (item.parsed) {
+        const jsonContainer = document.createElement('div');
+        jsonContainer.className = 'json-container';
+        let html = syntaxHighlightJSON(item.parsed);
+        // Apply search term highlighting on top of syntax highlighting
+        if (query) {
+          html = highlightInHtml(html, query);
+        }
+        jsonContainer.innerHTML = html;
+        div.appendChild(jsonContainer);
+      } else {
+        const line = item.raw || item._raw || '';
+        if (line.toLowerCase().includes('error') || line.toLowerCase().includes('fatal')) {
+          div.classList.add('error');
+        } else if (line.toLowerCase().includes('warn')) {
+          div.classList.add('warn');
+        } else if (line.toLowerCase().includes('info')) {
+          div.classList.add('info');
+        }
+        div.innerHTML = query ? highlightTerms(line, query) : escapeHtml(line);
+      }
+      return div;
+    }
+    
+    function renderSessionEntry(entry, query = '') {
+      const entryDiv = document.createElement('div');
+      entryDiv.className = `session-entry type-${entry.type || 'unknown'}`;
+
+      // Header
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'session-entry-header';
+
+      const typeSpan = document.createElement('span');
+      typeSpan.className = `entry-type ${entry.type || 'unknown'}`;
+      typeSpan.textContent = entry.type || 'unknown';
+      headerDiv.appendChild(typeSpan);
+
+      if (entry.timestamp) {
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'entry-timestamp';
+        timeSpan.textContent = new Date(entry.timestamp).toLocaleString();
+        headerDiv.appendChild(timeSpan);
+      }
+
+      if (entry.id) {
+        const idSpan = document.createElement('span');
+        idSpan.className = 'entry-id';
+        idSpan.textContent = `#${entry.id.substring(0, 8)}`;
+        headerDiv.appendChild(idSpan);
+      }
+
+      entryDiv.appendChild(headerDiv);
+
+      // Content
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'json-container';
+      let html = syntaxHighlightJSON(entry);
+      // Apply search term highlighting on top of syntax highlighting
+      if (query) {
+        html = highlightInHtml(html, query);
+      }
+      contentDiv.innerHTML = html;
+      entryDiv.appendChild(contentDiv);
+
+      return entryDiv;
+    }
+    
+    function renderNoResults(query, container) {
+      container.innerHTML = `
+        <div class="no-results">
+          <div class="no-results-icon">🔍</div>
+          <div class="no-results-text">No matches found for "${escapeHtml(query)}"</div>
+          <div class="no-results-hint">Try a different search term or use field:value syntax</div>
+        </div>
+      `;
+    }
+
+    // ===== Gateway Logs (Backend Search) =====
+    
+    function filterGatewayLogs() {
+      if (gatewaySearchTimer) clearTimeout(gatewaySearchTimer);
+      
+      const searchInput = document.getElementById('gateway-search');
+      const searchStats = document.getElementById('gateway-search-stats');
+      const searchHelp = document.getElementById('gateway-search-help');
+      const query = searchInput.value.trim();
+      
+      searchHelp.style.display = query && !query.includes(':') ? 'block' : 'none';
+      
+      gatewaySearchTimer = setTimeout(async () => {
+        if (!query) {
+          // No search - reconnect to WebSocket for live streaming
+          searchStats.textContent = '';
+          if (ws) switchLogFile();
+          return;
+        }
+        
+        setSearchLoading('gateway-search-stats', true);
+        
+        try {
+          const fileInfo = logFileSelect.value ? JSON.parse(logFileSelect.value) : null;
+          const params = new URLSearchParams({ q: query, limit: SEARCH_LIMIT });
+          if (fileInfo) {
+            params.set('file', fileInfo.name);
+            params.set('dir', fileInfo.dir);
+          }
+          
+          const response = await fetch(`/api/logs/search?${params}`);
+          const data = await response.json();
+          
+          logContainer.innerHTML = '';
+          
+          if (!data.success) {
+            showToast(`Search error: ${data.message}`, 'error');
+            searchStats.textContent = 'Error';
+            return;
+          }
+          
+          if (data.results.length === 0) {
+            renderNoResults(query, logContainer);
+            searchStats.textContent = '0 results';
+            return;
+          }
+          
+          const fragment = document.createDocumentFragment();
+          for (const item of data.results) {
+            fragment.appendChild(renderLogLine(item, query));
+          }
+          logContainer.appendChild(fragment);
+          
+          searchStats.textContent = data.truncated 
+            ? `${data.results.length}+ results (showing first ${SEARCH_LIMIT})`
+            : `${data.results.length} results`;
+          
+          logContainer.scrollTop = logContainer.scrollHeight;
+        } catch (err) {
+          console.error('Search error:', err);
+          showToast('Search failed', 'error');
+          searchStats.textContent = 'Error';
+        }
+      }, DEBOUNCE_MS);
+    }
+    
+    function clearGatewaySearch() {
+      document.getElementById('gateway-search').value = '';
+      document.getElementById('gateway-search-stats').textContent = '';
+      document.getElementById('gateway-search-help').style.display = 'none';
+      if (ws) switchLogFile();
+    }
+
+    // ===== Session Logs (Backend Search) =====
+    
+    function filterSessionLogs() {
+      if (sessionSearchTimer) clearTimeout(sessionSearchTimer);
+      
+      const searchInput = document.getElementById('session-search');
+      const searchStats = document.getElementById('session-search-stats');
+      const searchHelp = document.getElementById('session-search-help');
+      const query = searchInput.value.trim();
+      
+      searchHelp.style.display = query && !query.includes(':') ? 'block' : 'none';
+      
+      sessionSearchTimer = setTimeout(async () => {
+        if (!currentSessionId) return;
+        
+        if (!query) {
+          // No search - reload initial data
+          searchStats.textContent = '';
+          loadSessionLog();
+          return;
+        }
+        
+        setSearchLoading('session-search-stats', true);
+        
+        try {
+          const params = new URLSearchParams({ q: query, id: currentSessionId, limit: SEARCH_LIMIT });
+          const response = await fetch(`/api/sessions/search?${params}`);
+          const data = await response.json();
+          
+          // Clear entries but keep session info
+          const entries = sessionLogContainer.querySelectorAll('.session-entry, .log-line, .no-results, .load-more-container');
+          entries.forEach(el => el.remove());
+          
+          if (!data.success) {
+            showToast(`Search error: ${data.message}`, 'error');
+            searchStats.textContent = 'Error';
+            return;
+          }
+          
+          if (data.results.length === 0) {
+            renderNoResults(query, sessionLogContainer);
+            searchStats.textContent = '0 results';
+            return;
+          }
+          
+          const fragment = document.createDocumentFragment();
+          for (const entry of data.results) {
+            if (entry._raw) {
+              const div = document.createElement('div');
+              div.className = 'log-line';
+              div.innerHTML = highlightTerms(entry._raw, query);
+              fragment.appendChild(div);
+            } else {
+              fragment.appendChild(renderSessionEntry(entry, query));
+            }
+          }
+          sessionLogContainer.appendChild(fragment);
+          
+          searchStats.textContent = data.truncated 
+            ? `${data.results.length}+ results (showing first ${SEARCH_LIMIT})`
+            : `${data.results.length} results`;
+        } catch (err) {
+          console.error('Session search error:', err);
+          showToast('Search failed', 'error');
+          searchStats.textContent = 'Error';
+        }
+      }, DEBOUNCE_MS);
+    }
+    
+    function clearSessionSearch() {
+      document.getElementById('session-search').value = '';
+      document.getElementById('session-search-stats').textContent = '';
+      document.getElementById('session-search-help').style.display = 'none';
+      if (currentSessionId) loadSessionLog();
+    }
+
+    // ===== WebSocket for Live Log Streaming =====
+    
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+      ws.onopen = () => {
+        connectionDot.classList.add('connected');
+        connectionText.textContent = 'Connected';
+      };
+
+      ws.onclose = () => {
+        connectionDot.classList.remove('connected');
+        connectionText.textContent = 'Disconnected';
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      ws.onerror = (error) => console.error('WebSocket error:', error);
+
+      ws.onmessage = (event) => {
+        // Don't update if user is searching
+        if (document.getElementById('gateway-search').value.trim()) return;
+        
+        try {
+          const msg = JSON.parse(event.data);
+          
+          if (msg.type === 'initial') {
+            logContainer.innerHTML = '';
+            const lines = msg.data.split('\n').filter(l => l.trim());
+            const fragment = document.createDocumentFragment();
+            for (const line of lines) {
+              let item = { raw: line };
+              const trimmed = line.trim();
+              if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+                  (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+                try { item = { parsed: JSON.parse(trimmed), raw: line }; } catch {}
+              }
+              fragment.appendChild(renderLogLine(item));
+            }
+            logContainer.appendChild(fragment);
+            if (document.getElementById('auto-scroll').checked) {
+              logContainer.scrollTop = logContainer.scrollHeight;
+            }
+          } else if (msg.type === 'log') {
+            const lines = msg.data.split('\n').filter(l => l.trim());
+            for (const line of lines) {
+              let item = { raw: line };
+              const trimmed = line.trim();
+              if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+                  (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+                try { item = { parsed: JSON.parse(trimmed), raw: line }; } catch {}
+              }
+              logContainer.appendChild(renderLogLine(item));
+            }
+            // Limit DOM elements (virtual scroll - keep last 500)
+            while (logContainer.children.length > INITIAL_LIMIT) {
+              logContainer.removeChild(logContainer.firstChild);
+            }
+            if (document.getElementById('auto-scroll').checked) {
+              logContainer.scrollTop = logContainer.scrollHeight;
+            }
+          } else if (msg.type === 'error') {
+            const div = document.createElement('div');
+            div.className = 'log-line error';
+            div.textContent = `ERROR: ${msg.message}`;
+            logContainer.appendChild(div);
+          } else if (msg.type === 'info') {
+            showToast(msg.message, 'success');
+          }
+        } catch (err) {
+          console.error('Error parsing message:', err);
+        }
+      };
+    }
+
+    // ===== Session Loading =====
+    
+    async function loadSessionLog() {
+      const sessionId = sessionFileSelect.value;
+      currentSessionId = sessionId;
+      
+      if (!sessionId) {
+        sessionLogContainer.innerHTML = '<div class="loading">Select a session to view</div>';
+        sessionInfoContainer.innerHTML = '';
+        return;
+      }
+
+      sessionLogContainer.innerHTML = '<div class="loading"><div class="spinner"></div> Loading session...</div>';
+      sessionInfoContainer.innerHTML = '';
+      document.getElementById('session-search').value = '';
+      document.getElementById('session-search-stats').textContent = '';
+
+      try {
+        const response = await fetch(`/api/sessions/${sessionId}?limit=${INITIAL_LIMIT}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+          sessionLogContainer.innerHTML = `<div class="loading">Error: ${data.message}</div>`;
+          return;
+        }
+
+        sessionTotalLines = data.totalLines || data.results.length;
+        sessionLogContainer.innerHTML = '';
+
+        // Render session info from first entry
+        const firstSession = data.results.find(e => e.type === 'session');
+        if (firstSession) renderSessionInfo(firstSession);
+
+        // Render entries
+        const fragment = document.createDocumentFragment();
+        for (const entry of data.results) {
+          if (entry._raw) {
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            div.textContent = entry._raw;
+            fragment.appendChild(div);
+          } else {
+            fragment.appendChild(renderSessionEntry(entry));
+          }
+        }
+        sessionLogContainer.appendChild(fragment);
+        
+        // Show truncation notice if needed
+        if (data.truncated) {
+          const notice = document.createElement('div');
+          notice.className = 'load-more-container';
+          notice.innerHTML = `
+            <div class="truncation-notice">Showing last ${data.results.length} of ${data.totalLines} entries. Use search to find specific entries.</div>
+          `;
+          sessionLogContainer.insertBefore(notice, sessionLogContainer.firstChild);
+        }
+
+      } catch (err) {
+        console.error('Error loading session:', err);
+        sessionLogContainer.innerHTML = `<div class="loading">Error loading session: ${err.message}</div>`;
+      }
+    }
+
+    function renderSessionInfo(session) {
+      sessionInfoContainer.innerHTML = `
+        <div class="session-info">
+          <div class="session-info-item">
+            <span class="session-info-label">Session ID</span>
+            <span class="session-info-value">${session.id || 'N/A'}</span>
+          </div>
+          <div class="session-info-item">
+            <span class="session-info-label">Version</span>
+            <span class="session-info-value">${session.version || 'N/A'}</span>
+          </div>
+          <div class="session-info-item">
+            <span class="session-info-label">Started</span>
+            <span class="session-info-value">${session.timestamp ? new Date(session.timestamp).toLocaleString() : 'N/A'}</span>
+          </div>
+          <div class="session-info-item">
+            <span class="session-info-label">Working Directory</span>
+            <span class="session-info-value">${session.cwd || 'N/A'}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // ===== Gateway Control =====
+    
+    async function gatewayAction(action) {
+      const buttons = document.querySelectorAll('.controls button');
+      buttons.forEach(btn => btn.disabled = true);
+      
+      try {
+        const response = await fetch(`/api/gateway/${action}`, { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast(`Gateway ${action} successful`, 'success');
+        } else {
+          showToast(`Error: ${data.message}`, 'error');
+        }
+        setTimeout(checkStatus, 1000);
+      } catch (err) {
+        showToast(`Error: ${err.message}`, 'error');
+      } finally {
+        buttons.forEach(btn => btn.disabled = false);
+      }
+    }
+
+    async function checkStatus() {
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        
+        statusBadge.className = 'status-badge';
+        
+        if (data.status && data.status.toLowerCase().includes('running')) {
+          statusBadge.textContent = 'Running';
+          statusBadge.classList.add('status-running');
+        } else if (data.status && data.status.toLowerCase().includes('stopped')) {
+          statusBadge.textContent = 'Stopped';
+          statusBadge.classList.add('status-stopped');
+        } else {
+          statusBadge.textContent = data.status || 'Unknown';
+          statusBadge.classList.add('status-unknown');
+        }
+      } catch (err) {
+        statusBadge.textContent = 'Unknown';
+        statusBadge.className = 'status-badge status-unknown';
+      }
+    }
+
+    // ===== File Loading =====
+    
+    async function loadLogFiles() {
+      try {
+        const response = await fetch('/api/logs/files');
+        const data = await response.json();
+        
+        logFileSelect.innerHTML = '';
+        
+        if (data.files && data.files.length > 0) {
+          data.files.forEach((file, index) => {
+            const option = document.createElement('option');
+            option.value = JSON.stringify({ name: file.name, dir: file.dir });
+            option.textContent = file.displayName + (index === 0 ? ' (latest)' : '');
+            logFileSelect.appendChild(option);
+          });
+        } else {
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = 'No log files found';
+          logFileSelect.appendChild(option);
+        }
+      } catch (err) {
+        console.error('Error loading log files:', err);
+      }
+    }
+
+    async function loadSessionFiles() {
+      try {
+        const response = await fetch('/api/sessions/files');
+        const data = await response.json();
+        
+        sessionFileSelect.innerHTML = '<option value="">Select a session...</option>';
+        
+        if (data.files && data.files.length > 0) {
+          data.files.forEach((file, index) => {
+            const option = document.createElement('option');
+            option.value = file.sessionId;
+            const date = new Date(file.mtime);
+            const sizeKB = (file.size / 1024).toFixed(1);
+            option.textContent = `${file.sessionId.substring(0, 8)}... (${date.toLocaleString()}, ${sizeKB}KB)`;
+            if (index === 0) option.textContent += ' [latest]';
+            sessionFileSelect.appendChild(option);
+          });
+        }
+      } catch (err) {
+        console.error('Error loading session files:', err);
+        showToast('Failed to load session files', 'error');
+      }
+    }
+
+    function switchLogFile() {
+      const selectedValue = logFileSelect.value;
+      if (ws && ws.readyState === WebSocket.OPEN && selectedValue) {
+        logContainer.innerHTML = '';
+        const fileInfo = JSON.parse(selectedValue);
+        ws.send(JSON.stringify({ type: 'switch-log', file: fileInfo.name, dir: fileInfo.dir }));
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.getElementById(`${tab}-tab`).classList.add('active');
+      
+      if (tab === 'sessions' && sessionFileSelect.options.length <= 1) {
+        loadSessionFiles();
+      }
+    }
+
+    // ===== Initialize =====
+    connectWebSocket();
+    checkStatus();
+    loadLogFiles();
+    setInterval(checkStatus, 30000);
+  </script>
+</body>
+</html>
