@@ -1,51 +1,92 @@
-# OpenClaw Gateway Dashboard
+# 🐾 OpenClaw Gateway Dashboard
 
-A simple web-based dashboard for managing the OpenClaw Gateway.
+A sleek, real-time web dashboard for managing your [OpenClaw](https://github.com/openclaw/openclaw) Gateway.
 
-## Features
+![Dashboard Screenshot](screenshot.png)
 
-- **Real-time Log Viewer** - Tails gateway logs via WebSocket
-- **Gateway Controls** - Start/Stop/Restart buttons
-- **Status Monitoring** - Auto-refreshing status indicator
-- **Multiple Log Files** - Switch between gateway and command logs
+## ✨ Features
 
-## Installation
+| Feature | Description |
+|---------|-------------|
+| 📜 **Real-time Logs** | Live log streaming via WebSocket with auto-scroll |
+| 🎨 **JSON Highlighting** | Syntax-highlighted JSON for easy reading |
+| 🔍 **Log Search** | Fast server-side search with highlighting |
+| 🎛️ **Gateway Controls** | Start / Stop / Restart with one click |
+| 💬 **Session Logs** | View Discord & Telegram session transcripts |
+| 📊 **Status Monitor** | Auto-refreshing connection status |
+
+## 🚀 Quick Start
 
 ```bash
+# Clone the repo
+git clone https://github.com/CharlesYWL/openclaw-dashboard.git
+cd openclaw-dashboard
+
+# Install dependencies
 npm install
-```
 
-## Usage
-
-```bash
+# Start the server
 node server.js
 ```
 
-Then open http://localhost:3456 in your browser.
+Open **http://localhost:3456** in your browser.
 
-## Tech Stack
+## 🌐 Remote Access
 
-- Backend: Node.js + Express + WebSocket
-- Frontend: Vanilla HTML/JS
-- No frameworks, minimal dependencies
+Access via Tailscale or any reverse proxy:
 
-## Log Sources
+```
+http://<your-tailscale-ip>:3456
+```
 
-- `/tmp/openclaw/` - Main gateway logs
-- `~/.openclaw/logs/` - Command logs
+## 🛠️ Tech Stack
 
-## API Endpoints
+- **Backend:** Node.js + Express + WebSocket (ws)
+- **Frontend:** Vanilla HTML/CSS/JS (no frameworks!)
+- **Search:** Server-side grep (~6ms for 5MB logs)
 
-- `GET /api/status` - Gateway status
-- `POST /api/gateway/start` - Start gateway
-- `POST /api/gateway/stop` - Stop gateway
-- `POST /api/gateway/restart` - Restart gateway
-- `GET /api/logs/files` - List available log files
+## 📡 API Reference
 
-## WebSocket
+### REST Endpoints
 
-Connect to `ws://localhost:3456` for real-time log streaming.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/status` | Gateway status |
+| `POST` | `/api/gateway/start` | Start gateway |
+| `POST` | `/api/gateway/stop` | Stop gateway |
+| `POST` | `/api/gateway/restart` | Restart gateway |
+| `GET` | `/api/logs/files` | List log files |
+| `GET` | `/api/logs/search?q=error` | Search logs |
 
-Messages:
-- `{ type: 'switch-log', file: 'name.log', dir: '/path' }` - Switch log file
-- `{ type: 'refresh' }` - Refresh current log
+### WebSocket
+
+Connect to `ws://localhost:3456` for real-time streaming.
+
+```javascript
+// Switch log file
+ws.send(JSON.stringify({ 
+  type: 'switch-log', 
+  file: 'openclaw-2026-02-04.log',
+  dir: '/tmp/openclaw'
+}));
+
+// Refresh current log
+ws.send(JSON.stringify({ type: 'refresh' }));
+```
+
+## 📁 Log Sources
+
+| Directory | Contents |
+|-----------|----------|
+| `/tmp/openclaw/` | Gateway runtime logs |
+| `~/.openclaw/logs/` | Command & session logs |
+
+## 📄 License
+
+MIT
+
+---
+
+<p align="center">
+  Built for <a href="https://github.com/openclaw/openclaw">OpenClaw</a> 🐾
+</p>
