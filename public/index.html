@@ -810,6 +810,219 @@
       color: var(--text-muted);
       margin-top: 4px;
     }
+
+    /* ===== Agent Fleet Styles ===== */
+    .agents-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .agents-header h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .agent-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .agent-card:hover {
+      border-color: #60a5fa;
+      box-shadow: 0 4px 12px rgba(96, 165, 250, 0.1);
+    }
+
+    .agent-card.expanded {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 768px) {
+      .agent-card.expanded {
+        grid-column: span 1;
+      }
+    }
+
+    .agent-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .agent-emoji {
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    .agent-info {
+      flex: 1;
+    }
+
+    .agent-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .agent-id {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .agent-status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .agent-status-badge.online {
+      background: #1a4d1a;
+      color: #4ade80;
+      border: 1px solid #2d6a2d;
+    }
+
+    .agent-status-badge.offline {
+      background: #4d1a1a;
+      color: #f87171;
+      border: 1px solid #6a2d2d;
+    }
+
+    .agent-status-badge.unknown {
+      background: #4d4d1a;
+      color: #fbbf24;
+      border: 1px solid #6a6a2d;
+    }
+
+    .agent-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .agent-meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .agent-meta-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .agent-meta-value {
+      font-size: 13px;
+      color: var(--text-primary);
+      font-family: monospace;
+    }
+
+    .agent-details {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+      display: none;
+    }
+
+    .agent-card.expanded .agent-details {
+      display: block;
+    }
+
+    .agent-sessions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .agent-sessions-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .agent-sessions-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-tertiary);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .agent-sessions-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .agent-session-item {
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .agent-session-id {
+      font-family: monospace;
+      color: #60a5fa;
+    }
+
+    .agent-session-channel {
+      color: var(--text-muted);
+      margin-left: 8px;
+    }
+
+    .agent-error {
+      margin-top: 12px;
+      padding: 10px;
+      background: #451a1a;
+      border: 1px solid #6a2d2d;
+      border-radius: 6px;
+      color: #f87171;
+      font-size: 12px;
+    }
+
+    .agent-refresh-btn {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .agent-refresh-btn:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .agent-workspace {
+      word-break: break-all;
+      color: var(--text-secondary);
+    }
   </style>
 </head>
 <body>
@@ -880,6 +1093,7 @@
     <div class="tab-nav">
       <button class="tab-btn active" onclick="switchTab('gateway')">📋 Gateway Logs</button>
       <button class="tab-btn" onclick="switchTab('sessions')">💬 Session Logs</button>
+      <button class="tab-btn" onclick="switchTab('agents')">🤖 Agents</button>
     </div>
 
     <!-- Gateway Logs Tab -->
@@ -945,6 +1159,19 @@
         </div>
         <div id="session-info-container"></div>
         <div id="session-log-container"></div>
+      </div>
+    </div>
+
+    <!-- Agents Tab -->
+    <div id="agents-tab" class="tab-content">
+      <div class="agents-header">
+        <h2>🚀 Agent Fleet</h2>
+        <button class="btn-refresh" onclick="refreshAllAgents()" id="btn-refresh-agents">
+          <span>🔄</span> Refresh All
+        </button>
+      </div>
+      <div class="agents-grid" id="agents-grid">
+        <div class="loading"><div class="spinner"></div> Loading agents...</div>
       </div>
     </div>
   </div>
@@ -1483,6 +1710,11 @@
             logContainer.appendChild(div);
           } else if (msg.type === 'info') {
             showToast(msg.message, 'success');
+          } else if (msg.type === 'agent-status') {
+            // Handle agent status updates from server polling
+            if (msg.updates && Array.isArray(msg.updates)) {
+              handleAgentStatusUpdate(msg.updates);
+            }
           }
         } catch (err) {
           console.error('Error parsing message:', err);
@@ -1693,6 +1925,226 @@
       
       if (tab === 'sessions' && sessionFileSelect.options.length <= 1) {
         loadSessionFiles();
+      }
+      
+      if (tab === 'agents') {
+        loadAgents();
+      }
+    }
+
+    // ===== Agent Fleet =====
+    let agentsData = [];
+    let expandedAgentId = null;
+
+    async function loadAgents() {
+      const grid = document.getElementById('agents-grid');
+      
+      try {
+        const response = await fetch('/api/agents');
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        const data = await response.json();
+        
+        if (!data.success) {
+          grid.innerHTML = `<div class="agent-error">Failed to load agents: ${data.message}</div>`;
+          return;
+        }
+        
+        agentsData = data.agents;
+        renderAgents();
+      } catch (err) {
+        console.error('Error loading agents:', err);
+        grid.innerHTML = `<div class="agent-error">Error: ${err.message}</div>`;
+      }
+    }
+
+    function renderAgents() {
+      const grid = document.getElementById('agents-grid');
+      
+      if (agentsData.length === 0) {
+        grid.innerHTML = `
+          <div class="no-results">
+            <div class="no-results-icon">🤖</div>
+            <div class="no-results-text">No agents configured</div>
+            <div class="no-results-hint">Add agents to agents.json or check your OpenClaw configuration</div>
+          </div>
+        `;
+        return;
+      }
+      
+      grid.innerHTML = agentsData.map(agent => renderAgentCard(agent)).join('');
+    }
+
+    function renderAgentCard(agent) {
+      const isExpanded = expandedAgentId === agent.id;
+      const lastCheck = agent.lastCheck ? formatRelativeTime(new Date(agent.lastCheck)) : 'Never';
+      const lastActivity = agent.lastActivity ? formatRelativeTime(new Date(agent.lastActivity)) : 'Unknown';
+      
+      return `
+        <div class="agent-card ${isExpanded ? 'expanded' : ''}" onclick="toggleAgentCard('${agent.id}')">
+          <div class="agent-card-header">
+            <span class="agent-emoji">${agent.emoji || '🤖'}</span>
+            <div class="agent-info">
+              <div class="agent-name">${escapeHtml(agent.name)}</div>
+              <div class="agent-id">${escapeHtml(agent.id)}</div>
+            </div>
+            <span class="agent-status-badge ${agent.status || 'unknown'}">${agent.status || 'unknown'}</span>
+          </div>
+          
+          <div class="agent-meta">
+            <div class="agent-meta-item">
+              <span class="agent-meta-label">Host</span>
+              <span class="agent-meta-value">${agent.host}:${agent.port}</span>
+            </div>
+            <div class="agent-meta-item">
+              <span class="agent-meta-label">Sessions</span>
+              <span class="agent-meta-value">${agent.sessionsCount || 0}</span>
+            </div>
+            <div class="agent-meta-item">
+              <span class="agent-meta-label">Last Check</span>
+              <span class="agent-meta-value">${lastCheck}</span>
+            </div>
+            <div class="agent-meta-item">
+              <span class="agent-meta-label">Last Activity</span>
+              <span class="agent-meta-value">${lastActivity}</span>
+            </div>
+          </div>
+          
+          ${agent.error ? `<div class="agent-error">⚠️ ${escapeHtml(agent.error)}</div>` : ''}
+          
+          <div class="agent-details">
+            <div class="agent-meta-item" style="margin-bottom: 12px;">
+              <span class="agent-meta-label">Workspace</span>
+              <span class="agent-meta-value agent-workspace">${escapeHtml(agent.workspace || 'N/A')}</span>
+            </div>
+            
+            <div class="agent-sessions-header">
+              <span class="agent-sessions-title">Active Sessions</span>
+              <button class="agent-refresh-btn" onclick="event.stopPropagation(); refreshAgent('${agent.id}')">🔄 Refresh</button>
+            </div>
+            <div class="agent-sessions-list" id="sessions-${agent.id}">
+              <div class="loading" style="padding: 10px;"><div class="spinner"></div> Loading sessions...</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function formatRelativeTime(date) {
+      const now = new Date();
+      const diffMs = now - date;
+      const diffSecs = Math.floor(diffMs / 1000);
+      const diffMins = Math.floor(diffSecs / 60);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      
+      if (diffSecs < 60) return `${diffSecs}s ago`;
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    }
+
+    async function toggleAgentCard(agentId) {
+      if (expandedAgentId === agentId) {
+        expandedAgentId = null;
+      } else {
+        expandedAgentId = agentId;
+        // Load sessions when expanding
+        await loadAgentSessions(agentId);
+      }
+      renderAgents();
+    }
+
+    async function loadAgentSessions(agentId) {
+      try {
+        const response = await fetch(`/api/agents/${agentId}/sessions`);
+        const data = await response.json();
+        
+        const container = document.getElementById(`sessions-${agentId}`);
+        if (!container) return;
+        
+        if (!data.success) {
+          container.innerHTML = `<div class="agent-error">Failed to load: ${data.error || 'Unknown error'}</div>`;
+          return;
+        }
+        
+        if (!data.sessions || data.sessions.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px;">No active sessions</div>';
+          return;
+        }
+        
+        container.innerHTML = data.sessions.map(session => `
+          <div class="agent-session-item">
+            <span class="agent-session-id">${escapeHtml(session.id?.substring(0, 12) || session.sessionId?.substring(0, 12) || 'Unknown')}...</span>
+            <span class="agent-session-channel">${escapeHtml(session.channel || session.type || '')}</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        const container = document.getElementById(`sessions-${agentId}`);
+        if (container) {
+          container.innerHTML = `<div class="agent-error">Error: ${err.message}</div>`;
+        }
+      }
+    }
+
+    async function refreshAgent(agentId) {
+      try {
+        showToast('Refreshing agent...', 'info');
+        const response = await fetch(`/api/agents/${agentId}/refresh`, { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('Agent refreshed', 'success');
+          await loadAgents();
+        } else {
+          showToast(`Error: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function refreshAllAgents() {
+      const btn = document.getElementById('btn-refresh-agents');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Refreshing...';
+      
+      try {
+        const response = await fetch('/api/agents/refresh-all', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+          showToast('All agents refreshed', 'success');
+          await loadAgents();
+        } else {
+          showToast(`Error: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Error: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🔄</span> Refresh All';
+      }
+    }
+
+    // Handle WebSocket agent status updates
+    function handleAgentStatusUpdate(updates) {
+      for (const update of updates) {
+        const idx = agentsData.findIndex(a => a.id === update.agentId);
+        if (idx >= 0) {
+          agentsData[idx].status = update.status;
+          agentsData[idx].lastCheck = update.lastCheck;
+          agentsData[idx].lastActivity = update.lastActivity;
+          agentsData[idx].sessionsCount = update.sessions?.length || 0;
+          agentsData[idx].error = update.error;
+        }
+      }
+      
+      // Re-render if on agents tab
+      if (currentTab === 'agents') {
+        renderAgents();
       }
     }
 

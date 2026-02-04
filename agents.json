@@ -1,0 +1,14 @@
+{
+  "agents": [
+    {
+      "id": "main",
+      "name": "Main Agent",
+      "emoji": "🤖",
+      "host": "127.0.0.1",
+      "port": 18789,
+      "token": "731d810caed7dbf2a47d56aa8bb53b0b76474285cb0f9765",
+      "workspace": "~/.openclaw/agents/main"
+    }
+  ],
+  "pollIntervalMs": 15000
+}

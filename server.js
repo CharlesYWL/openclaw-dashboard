@@ -24,6 +24,8 @@ const wss = new WebSocket.Server({ server });
 
 const PORT = 3456;
 const AUTH_FILE = path.join(__dirname, 'auth.json');
+const AGENTS_FILE = path.join(__dirname, 'agents.json');
+const OPENCLAW_CONFIG = path.join(os.homedir(), '.openclaw', 'openclaw.json');
 const SESSION_SECRET = crypto.randomBytes(32).toString('hex');
 
 // Initialize or load authentication
@@ -50,6 +52,200 @@ function initAuth() {
   }
 }
 initAuth();
+
+// ===== Agent Fleet Management =====
+let agentsConfig = { agents: [], pollIntervalMs: 15000 };
+const agentStatus = new Map(); // id -> { status, lastCheck, lastActivity, sessions, error }
+
+function loadAgentsConfig() {
+  // First, load agents.json if exists
+  if (fs.existsSync(AGENTS_FILE)) {
+    try {
+      agentsConfig = JSON.parse(fs.readFileSync(AGENTS_FILE, 'utf-8'));
+    } catch (err) {
+      console.error('[AGENTS] Error reading agents.json:', err.message);
+    }
+  }
+
+  // Auto-discover from ~/.openclaw/openclaw.json
+  if (fs.existsSync(OPENCLAW_CONFIG)) {
+    try {
+      const openclawConfig = JSON.parse(fs.readFileSync(OPENCLAW_CONFIG, 'utf-8'));
+      const gateway = openclawConfig.gateway || {};
+      const token = gateway.auth?.token || null;
+      const port = gateway.port || 18789;
+      const host = gateway.bind === 'loopback' ? '127.0.0.1' : (gateway.bind || '127.0.0.1');
+
+      // Check if main agent already exists
+      const mainIdx = agentsConfig.agents.findIndex(a => a.id === 'main');
+      const mainAgent = {
+        id: 'main',
+        name: 'Main Agent',
+        emoji: '🤖',
+        host,
+        port,
+        token,
+        workspace: path.join(os.homedir(), '.openclaw', 'agents', 'main'),
+        autoDiscovered: true
+      };
+
+      if (mainIdx >= 0) {
+        // Update existing with discovered values if token was null
+        if (!agentsConfig.agents[mainIdx].token) {
+          agentsConfig.agents[mainIdx].token = token;
+        }
+        agentsConfig.agents[mainIdx].port = port;
+        agentsConfig.agents[mainIdx].host = host;
+      } else {
+        agentsConfig.agents.unshift(mainAgent);
+      }
+
+      // Save updated config
+      fs.writeFileSync(AGENTS_FILE, JSON.stringify(agentsConfig, null, 2));
+      console.log('[AGENTS] Auto-discovered main agent from openclaw.json');
+    } catch (err) {
+      console.error('[AGENTS] Error reading openclaw.json:', err.message);
+    }
+  }
+
+  // Initialize status for all agents
+  for (const agent of agentsConfig.agents) {
+    if (!agentStatus.has(agent.id)) {
+      agentStatus.set(agent.id, {
+        status: 'unknown',
+        lastCheck: null,
+        lastActivity: null,
+        sessions: [],
+        error: null
+      });
+    }
+  }
+
+  console.log(`[AGENTS] Loaded ${agentsConfig.agents.length} agent(s)`);
+}
+loadAgentsConfig();
+
+// Fetch agent status from gateway API
+async function fetchAgentStatus(agent) {
+  const url = `http://${agent.host}:${agent.port}/status`;
+  const headers = {};
+  if (agent.token) {
+    headers['Authorization'] = `Bearer ${agent.token}`;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { online: true, data, error: null };
+  } catch (err) {
+    return { online: false, data: null, error: err.message };
+  }
+}
+
+// Fetch agent sessions from gateway API
+async function fetchAgentSessions(agent) {
+  const url = `http://${agent.host}:${agent.port}/sessions`;
+  const headers = {};
+  if (agent.token) {
+    headers['Authorization'] = `Bearer ${agent.token}`;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { success: true, sessions: data.sessions || data || [], error: null };
+  } catch (err) {
+    return { success: false, sessions: [], error: err.message };
+  }
+}
+
+// Poll all agents
+async function pollAllAgents() {
+  const updates = [];
+
+  for (const agent of agentsConfig.agents) {
+    const statusResult = await fetchAgentStatus(agent);
+    const currentStatus = agentStatus.get(agent.id) || {};
+    
+    const newStatus = {
+      status: statusResult.online ? 'online' : 'offline',
+      lastCheck: new Date().toISOString(),
+      lastActivity: statusResult.data?.lastActivity || currentStatus.lastActivity,
+      gatewayData: statusResult.data,
+      error: statusResult.error
+    };
+
+    // Only fetch sessions if online
+    if (statusResult.online) {
+      const sessionsResult = await fetchAgentSessions(agent);
+      newStatus.sessions = sessionsResult.sessions;
+      newStatus.sessionsError = sessionsResult.error;
+    } else {
+      newStatus.sessions = currentStatus.sessions || [];
+    }
+
+    // Check if status changed
+    const changed = currentStatus.status !== newStatus.status;
+    agentStatus.set(agent.id, newStatus);
+
+    if (changed) {
+      updates.push({ agentId: agent.id, ...newStatus });
+    }
+  }
+
+  // Broadcast status changes via WebSocket
+  if (updates.length > 0) {
+    broadcastAgentUpdates(updates);
+  }
+}
+
+// Broadcast agent updates to all connected WebSocket clients
+function broadcastAgentUpdates(updates) {
+  const message = JSON.stringify({ type: 'agent-status', updates });
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
+
+// Start polling
+let pollInterval = null;
+function startAgentPolling() {
+  // Initial poll
+  pollAllAgents();
+
+  // Set up interval
+  pollInterval = setInterval(pollAllAgents, agentsConfig.pollIntervalMs || 15000);
+  console.log(`[AGENTS] Polling every ${agentsConfig.pollIntervalMs || 15000}ms`);
+}
+startAgentPolling();
 
 // Simple session storage (in-memory)
 const sessions = new Map();
@@ -780,6 +976,142 @@ async function jsonSearch(filePath, fieldFilters, keywords, limit) {
 }
 
 // API endpoints
+
+// ===== Agent Fleet API =====
+
+// GET /api/agents - List all agents with their status
+app.get('/api/agents', (req, res) => {
+  try {
+    const agents = agentsConfig.agents.map(agent => {
+      const status = agentStatus.get(agent.id) || {};
+      return {
+        ...agent,
+        token: agent.token ? '***' : null, // Don't expose token
+        status: status.status || 'unknown',
+        lastCheck: status.lastCheck,
+        lastActivity: status.lastActivity,
+        sessionsCount: status.sessions?.length || 0,
+        error: status.error
+      };
+    });
+    res.json({ success: true, agents });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/agents/:id/status - Get single agent status
+app.get('/api/agents/:id/status', async (req, res) => {
+  try {
+    const agent = agentsConfig.agents.find(a => a.id === req.params.id);
+    if (!agent) {
+      return res.status(404).json({ success: false, message: 'Agent not found' });
+    }
+
+    // Fetch fresh status
+    const statusResult = await fetchAgentStatus(agent);
+    const status = agentStatus.get(agent.id) || {};
+    
+    // Update cached status
+    status.status = statusResult.online ? 'online' : 'offline';
+    status.lastCheck = new Date().toISOString();
+    status.gatewayData = statusResult.data;
+    status.error = statusResult.error;
+    agentStatus.set(agent.id, status);
+
+    res.json({
+      success: true,
+      agent: {
+        ...agent,
+        token: agent.token ? '***' : null
+      },
+      status: status.status,
+      lastCheck: status.lastCheck,
+      lastActivity: status.lastActivity,
+      gatewayData: status.gatewayData,
+      error: status.error
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/agents/:id/sessions - Get agent sessions
+app.get('/api/agents/:id/sessions', async (req, res) => {
+  try {
+    const agent = agentsConfig.agents.find(a => a.id === req.params.id);
+    if (!agent) {
+      return res.status(404).json({ success: false, message: 'Agent not found' });
+    }
+
+    // Fetch fresh sessions
+    const sessionsResult = await fetchAgentSessions(agent);
+    
+    // Update cached sessions
+    const status = agentStatus.get(agent.id) || {};
+    if (sessionsResult.success) {
+      status.sessions = sessionsResult.sessions;
+    }
+    agentStatus.set(agent.id, status);
+
+    res.json({
+      success: sessionsResult.success,
+      sessions: sessionsResult.sessions,
+      error: sessionsResult.error
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/agents/:id/refresh - Force refresh agent status
+app.post('/api/agents/:id/refresh', async (req, res) => {
+  try {
+    const agent = agentsConfig.agents.find(a => a.id === req.params.id);
+    if (!agent) {
+      return res.status(404).json({ success: false, message: 'Agent not found' });
+    }
+
+    const statusResult = await fetchAgentStatus(agent);
+    const sessionsResult = await fetchAgentSessions(agent);
+
+    const status = {
+      status: statusResult.online ? 'online' : 'offline',
+      lastCheck: new Date().toISOString(),
+      lastActivity: statusResult.data?.lastActivity,
+      gatewayData: statusResult.data,
+      sessions: sessionsResult.sessions || [],
+      error: statusResult.error
+    };
+    agentStatus.set(agent.id, status);
+
+    // Broadcast update
+    broadcastAgentUpdates([{ agentId: agent.id, ...status }]);
+
+    res.json({ success: true, status });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/agents/refresh-all - Force refresh all agents
+app.post('/api/agents/refresh-all', async (req, res) => {
+  try {
+    await pollAllAgents();
+    const agents = agentsConfig.agents.map(agent => {
+      const status = agentStatus.get(agent.id) || {};
+      return {
+        id: agent.id,
+        status: status.status || 'unknown',
+        lastCheck: status.lastCheck
+      };
+    });
+    res.json({ success: true, agents });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 app.post('/api/gateway/:action', async (req, res) => {
   const { action } = req.params;
   try {
