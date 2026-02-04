@@ -952,6 +952,110 @@
       border-color: var(--status-offline);
     }
 
+    /* ===== Confirm Modal ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 28px 32px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      animation: modalSlideIn 0.2s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .modal-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .modal-message {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+      white-space: pre-line;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal-btn {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      min-width: 100px;
+    }
+
+    .modal-btn.cancel {
+      background: var(--bg-main);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-btn.cancel:hover {
+      background: var(--bg-sidebar);
+      color: var(--text-primary);
+    }
+
+    .modal-btn.confirm {
+      background: var(--green);
+      color: #000;
+    }
+
+    .modal-btn.confirm:hover {
+      background: #5eead4;
+    }
+
+    .modal-btn.confirm.danger {
+      background: var(--status-offline);
+      color: #fff;
+    }
+
+    .modal-btn.confirm.danger:hover {
+      background: #dc2626;
+    }
+
     /* ===== Loading ===== */
     .loading {
       display: flex;
@@ -1179,6 +1283,46 @@
       toast.textContent = message;
       toast.className = `toast ${type} show`;
       setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function showConfirm({ icon = '⚠️', title, message, confirmText = '确认', cancelText = '取消', danger = false }) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const confirmBtn = document.getElementById('modal-confirm');
+        const cancelBtn = document.getElementById('modal-cancel');
+
+        modalIcon.textContent = icon;
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        confirmBtn.textContent = confirmText;
+        cancelBtn.textContent = cancelText;
+        
+        if (danger) {
+          confirmBtn.classList.add('danger');
+        } else {
+          confirmBtn.classList.remove('danger');
+        }
+
+        modal.style.display = 'flex';
+
+        const cleanup = () => {
+          modal.style.display = 'none';
+          confirmBtn.removeEventListener('click', onConfirm);
+          cancelBtn.removeEventListener('click', onCancel);
+          modal.removeEventListener('click', onOverlayClick);
+        };
+
+        const onConfirm = () => { cleanup(); resolve(true); };
+        const onCancel = () => { cleanup(); resolve(false); };
+        const onOverlayClick = (e) => { if (e.target === modal) { cleanup(); resolve(false); } };
+
+        confirmBtn.addEventListener('click', onConfirm);
+        cancelBtn.addEventListener('click', onCancel);
+        modal.addEventListener('click', onOverlayClick);
+      });
     }
 
     function formatRelativeTime(date) {
@@ -1650,9 +1794,17 @@
 
     async function toggleHeartbeat(agentId, enable) {
       const action = enable ? '启用' : '禁用';
-      if (!confirm(`确定要${action} Heartbeat 吗？\n\n${enable ? '启用后 agent 会每30分钟自动检查待办事项' : '禁用后 agent 只在你主动发消息时响应'}`)) {
-        return;
-      }
+      const confirmed = await showConfirm({
+        icon: enable ? '💓' : '💔',
+        title: `${action} Heartbeat`,
+        message: enable 
+          ? '启用后 Agent 会每30分钟自动检查待办事项（邮件、日历、提醒等）'
+          : '禁用后 Agent 只在你主动发消息时响应',
+        confirmText: action,
+        danger: !enable
+      });
+      
+      if (!confirmed) return;
       
       try {
         const response = await fetch(`/api/agents/${agentId}/heartbeat`, {
@@ -1673,9 +1825,14 @@
     }
 
     async function triggerHeartbeat(agentId) {
-      if (!confirm('确定要立即触发一次 Heartbeat 吗？\n\nAgent 会检查邮件、日历、待办等事项')) {
-        return;
-      }
+      const confirmed = await showConfirm({
+        icon: '⚡',
+        title: '触发 Heartbeat',
+        message: '立即让 Agent 检查一次待办事项\n（邮件、日历、提醒等）',
+        confirmText: '触发'
+      });
+      
+      if (!confirmed) return;
       
       try {
         const response = await fetch(`/api/agents/${agentId}/trigger`, { method: 'POST' });
@@ -1691,14 +1848,26 @@
     }
 
     async function resetAgent(agentId) {
-      if (!confirm('⚠️ 确定要重置这个 Agent 吗？\n\n这会清空所有 session 的对话历史，Agent 会忘记之前聊的内容。\n\n此操作不可撤销！')) {
-        return;
-      }
+      const confirmed = await showConfirm({
+        icon: '🗑️',
+        title: '重置 Agent',
+        message: '⚠️ 这会清空所有 Session 的对话历史\n\nAgent 会忘记之前聊的内容\n此操作不可撤销！',
+        confirmText: '重置',
+        danger: true
+      });
+      
+      if (!confirmed) return;
       
       // Double confirm for destructive action
-      if (!confirm('再次确认：真的要重置吗？')) {
-        return;
-      }
+      const doubleConfirmed = await showConfirm({
+        icon: '⚠️',
+        title: '再次确认',
+        message: '真的要重置吗？\n所有对话历史将被永久删除',
+        confirmText: '确认重置',
+        danger: true
+      });
+      
+      if (!doubleConfirmed) return;
       
       try {
         const response = await fetch(`/api/agents/${agentId}/reset`, { method: 'POST' });
@@ -2037,5 +2206,18 @@
     setInterval(checkStatus, 30000);
     loadAgents();
   </script>
+
+  <!-- Confirm Modal -->
+  <div id="confirm-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-icon" id="modal-icon">⚠️</div>
+      <div class="modal-title" id="modal-title">确认操作</div>
+      <div class="modal-message" id="modal-message">确定要执行此操作吗？</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" id="modal-cancel">取消</button>
+        <button class="modal-btn confirm" id="modal-confirm">确认</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
