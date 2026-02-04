@@ -585,19 +585,54 @@
 
     .session-item {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 10px;
+      flex-direction: column;
+      padding: 10px 12px;
       background: var(--bg-main);
       border-radius: 6px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       font-size: 12px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
     }
+
+    .session-item:hover {
+      border-color: var(--blue);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .session-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .session-details {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .session-model {
+      color: var(--text-muted);
+    }
+
+    .session-percent {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .session-percent.low { background: rgba(74, 222, 128, 0.2); color: var(--green); }
+    .session-percent.medium { background: rgba(250, 204, 21, 0.2); color: #facc15; }
+    .session-percent.high { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
 
     .session-key {
       color: var(--blue);
       font-family: monospace;
-      max-width: 60%;
+      max-width: 70%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1154,6 +1189,29 @@
       }
     }
 
+    // View session log - switch to session logs view and select the session file
+    async function viewSessionLog(sessionId) {
+      if (!sessionId) return;
+      
+      // Switch to session logs view
+      switchView('session-logs');
+      
+      // Wait for session files to load
+      await new Promise(r => setTimeout(r, 500));
+      
+      // Find and select the session file
+      const select = document.getElementById('session-file-select');
+      if (select) {
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].value.includes(sessionId)) {
+            select.selectedIndex = i;
+            select.dispatchEvent(new Event('change'));
+            break;
+          }
+        }
+      }
+    }
+
     // ===== Auth =====
     async function logout() {
       try {
@@ -1430,10 +1488,20 @@
             const key = s.key || s.sessionId || 'Unknown';
             const shortKey = key.length > 40 ? key.substring(0, 40) + '...' : key;
             const time = s.updatedAt ? formatRelativeTime(s.updatedAt) : '--';
+            const model = s.model || 'unknown';
+            const percent = s.percentUsed || 0;
+            const percentClass = percent >= 80 ? 'high' : percent >= 50 ? 'medium' : 'low';
+            const sessionId = s.sessionId || s.id || '';
             return `
-              <div class="session-item">
-                <span class="session-key" title="${escapeHtml(key)}">${escapeHtml(shortKey)}</span>
-                <span class="session-time">${time}</span>
+              <div class="session-item" onclick="viewSessionLog('${escapeHtml(sessionId)}')" title="Click to view logs">
+                <div class="session-main">
+                  <span class="session-key">${escapeHtml(shortKey)}</span>
+                  <span class="session-time">${time}</span>
+                </div>
+                <div class="session-details">
+                  <span class="session-model">🤖 ${escapeHtml(model)}</span>
+                  <span class="session-percent ${percentClass}">${percent}%</span>
+                </div>
               </div>
             `;
           }).join('');
