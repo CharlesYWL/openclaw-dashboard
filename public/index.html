@@ -2000,7 +2000,7 @@
             </div>
             <div class="agent-meta-item">
               <span class="agent-meta-label">Sessions</span>
-              <span class="agent-meta-value">${agent.sessionsCount || 0}</span>
+              <span class="agent-meta-value">${agent.sessionCount || agent.sessionsCount || 0}</span>
             </div>
             <div class="agent-meta-item">
               <span class="agent-meta-label">Last Check</span>
@@ -2137,7 +2137,7 @@
           agentsData[idx].status = update.status;
           agentsData[idx].lastCheck = update.lastCheck;
           agentsData[idx].lastActivity = update.lastActivity;
-          agentsData[idx].sessionsCount = update.sessions?.length || 0;
+          agentsData[idx].sessionCount = update.sessionCount || update.sessions?.length || 0;
           agentsData[idx].error = update.error;
         }
       }

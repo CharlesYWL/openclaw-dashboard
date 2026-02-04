@@ -138,12 +138,24 @@ async function fetchAgentStatus(agent) {
     // Find sessions for this agent
     const sessions = data.sessions?.recent?.filter(s => s.agentId === agent.id) || [];
     
+    // Calculate last activity from most recent session
+    let lastActivity = null;
+    if (sessions.length > 0) {
+      const mostRecent = sessions.reduce((a, b) => 
+        (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a
+      );
+      if (mostRecent.updatedAt) {
+        lastActivity = new Date(mostRecent.updatedAt).toISOString();
+      }
+    }
+    
     return { 
       online: true, 
       data: {
         agentId: agent.id,
-        sessions: sessions.length,
-        recentSessions: sessions.slice(0, 5),
+        sessions: sessions,
+        sessionCount: sessions.length,
+        lastActivity: lastActivity,
         channels: data.channelSummary || [],
         heartbeat: data.heartbeat
       }, 
@@ -196,18 +208,11 @@ async function pollAllAgents() {
       status: statusResult.online ? 'online' : 'offline',
       lastCheck: new Date().toISOString(),
       lastActivity: statusResult.data?.lastActivity || currentStatus.lastActivity,
+      sessions: statusResult.data?.sessions || [],
+      sessionCount: statusResult.data?.sessionCount || 0,
       gatewayData: statusResult.data,
       error: statusResult.error
     };
-
-    // Only fetch sessions if online
-    if (statusResult.online) {
-      const sessionsResult = await fetchAgentSessions(agent);
-      newStatus.sessions = sessionsResult.sessions;
-      newStatus.sessionsError = sessionsResult.error;
-    } else {
-      newStatus.sessions = currentStatus.sessions || [];
-    }
 
     // Check if status changed
     const changed = currentStatus.status !== newStatus.status;
