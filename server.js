@@ -125,31 +125,30 @@ function loadAgentsConfig() {
 }
 loadAgentsConfig();
 
-// Fetch agent status from gateway API
+// Fetch agent status using openclaw CLI
 async function fetchAgentStatus(agent) {
-  const url = `http://${agent.host}:${agent.port}/status`;
-  const headers = {};
-  if (agent.token) {
-    headers['Authorization'] = `Bearer ${agent.token}`;
-  }
-
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers,
-      signal: controller.signal
+    // Use openclaw status --json to get real status
+    const result = execSync('openclaw status --json 2>/dev/null', { 
+      timeout: 10000,
+      encoding: 'utf-8'
     });
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    return { online: true, data, error: null };
+    const data = JSON.parse(result);
+    
+    // Find sessions for this agent
+    const sessions = data.sessions?.recent?.filter(s => s.agentId === agent.id) || [];
+    
+    return { 
+      online: true, 
+      data: {
+        agentId: agent.id,
+        sessions: sessions.length,
+        recentSessions: sessions.slice(0, 5),
+        channels: data.channelSummary || [],
+        heartbeat: data.heartbeat
+      }, 
+      error: null 
+    };
   } catch (err) {
     return { online: false, data: null, error: err.message };
   }
