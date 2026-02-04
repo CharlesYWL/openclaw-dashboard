@@ -1,0 +1,18 @@
+[Unit]
+Description=OpenClaw Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=s496691084
+WorkingDirectory=/home/s496691084/github/openclaw-dashboard
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=10
+Environment=NODE_ENV=production
+Environment=PORT=3456
+Environment=PATH=/home/s496691084/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HOME=/home/s496691084
+
+[Install]
+WantedBy=multi-user.target

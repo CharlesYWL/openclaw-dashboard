@@ -1125,6 +1125,82 @@ app.post('/api/agents/refresh-all', async (req, res) => {
   }
 });
 
+// POST /api/agents/:id/heartbeat - Enable/disable heartbeat
+app.post('/api/agents/:id/heartbeat', async (req, res) => {
+  const { enable } = req.body;
+  try {
+    // Read current config
+    const configPath = path.join(process.env.HOME, '.openclaw', 'openclaw.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    
+    // Update heartbeat setting
+    if (enable) {
+      // Enable heartbeat with default 30m interval
+      if (!config.agents?.main?.heartbeat) {
+        config.agents = config.agents || {};
+        config.agents.main = config.agents.main || {};
+        config.agents.main.heartbeat = { every: '30m' };
+      }
+    } else {
+      // Disable heartbeat by removing the config
+      if (config.agents?.main?.heartbeat) {
+        delete config.agents.main.heartbeat;
+      }
+    }
+    
+    // Write back config
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    
+    // Restart gateway to apply changes
+    execSync('openclaw gateway restart', { timeout: 10000 });
+    
+    res.json({ success: true, enabled: enable });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/agents/:id/trigger - Trigger heartbeat now
+app.post('/api/agents/:id/trigger', async (req, res) => {
+  try {
+    // Use cron wake to trigger immediate heartbeat
+    execSync('openclaw cron wake --mode now', { timeout: 10000, encoding: 'utf-8' });
+    res.json({ success: true, message: 'Heartbeat triggered' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/agents/:id/reset - Reset agent sessions
+app.post('/api/agents/:id/reset', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Find and delete session files for this agent
+    const sessionsDir = path.join(process.env.HOME, '.openclaw', 'agents', id, 'sessions');
+    
+    if (fs.existsSync(sessionsDir)) {
+      const files = fs.readdirSync(sessionsDir);
+      let deleted = 0;
+      
+      for (const file of files) {
+        if (file.endsWith('.jsonl')) {
+          fs.unlinkSync(path.join(sessionsDir, file));
+          deleted++;
+        }
+      }
+      
+      // Also restart gateway to clear in-memory state
+      execSync('openclaw gateway restart', { timeout: 10000 });
+      
+      res.json({ success: true, message: `Reset complete. Deleted ${deleted} session files.` });
+    } else {
+      res.json({ success: true, message: 'No sessions to reset' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post('/api/gateway/:action', async (req, res) => {
   const { action } = req.params;
   try {

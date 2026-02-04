@@ -1648,17 +1648,69 @@
       }
     }
 
-    function toggleHeartbeat(agentId, enable) {
-      showToast(`Heartbeat ${enable ? 'enabled' : 'disabled'} (simulated)`, 'info');
+    async function toggleHeartbeat(agentId, enable) {
+      const action = enable ? '启用' : '禁用';
+      if (!confirm(`确定要${action} Heartbeat 吗？\n\n${enable ? '启用后 agent 会每30分钟自动检查待办事项' : '禁用后 agent 只在你主动发消息时响应'}`)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/agents/${agentId}/heartbeat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enable })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast(`Heartbeat ${enable ? 'enabled' : 'disabled'}`, 'success');
+          await loadAgents();
+        } else {
+          showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
     }
 
-    function triggerHeartbeat(agentId) {
-      showToast('Heartbeat triggered (simulated)', 'info');
+    async function triggerHeartbeat(agentId) {
+      if (!confirm('确定要立即触发一次 Heartbeat 吗？\n\nAgent 会检查邮件、日历、待办等事项')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/agents/${agentId}/trigger`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+          showToast('Heartbeat triggered!', 'success');
+        } else {
+          showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
     }
 
-    function resetAgent(agentId) {
-      if (confirm('Are you sure you want to reset this agent?')) {
-        showToast('Reset requested (simulated)', 'info');
+    async function resetAgent(agentId) {
+      if (!confirm('⚠️ 确定要重置这个 Agent 吗？\n\n这会清空所有 session 的对话历史，Agent 会忘记之前聊的内容。\n\n此操作不可撤销！')) {
+        return;
+      }
+      
+      // Double confirm for destructive action
+      if (!confirm('再次确认：真的要重置吗？')) {
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/agents/${agentId}/reset`, { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+          showToast('Agent reset successfully', 'success');
+          await loadAgents();
+        } else {
+          showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
       }
     }
 
