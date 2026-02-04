@@ -976,21 +976,125 @@
     }
 
     .agent-session-item {
-      padding: 8px 12px;
+      padding: 12px;
       background: var(--bg-tertiary);
-      border-radius: 6px;
-      margin-bottom: 6px;
+      border-radius: 8px;
+      margin-bottom: 8px;
       font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .agent-session-item:hover {
+      border-color: #60a5fa;
+      background: var(--bg-secondary);
+    }
+
+    .agent-session-item:hover .session-click-hint {
+      opacity: 1;
+    }
+
+    .session-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
     }
 
     .agent-session-id {
       font-family: monospace;
       color: #60a5fa;
+      font-weight: 500;
     }
 
     .agent-session-channel {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      background: #374151;
+      color: var(--text-secondary);
+    }
+
+    .agent-session-channel.telegram { background: #0088cc20; color: #0088cc; }
+    .agent-session-channel.discord { background: #5865f220; color: #5865f2; }
+    .agent-session-channel.subagent { background: #8b5cf620; color: #a78bfa; }
+    .agent-session-channel.cron { background: #f59e0b20; color: #fbbf24; }
+    .agent-session-channel.main { background: #10b98120; color: #34d399; }
+
+    .session-meta-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .session-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
       color: var(--text-muted);
-      margin-left: 8px;
+    }
+
+    .session-meta-item .icon {
+      font-size: 12px;
+    }
+
+    .session-meta-item .value {
+      color: var(--text-secondary);
+    }
+
+    .session-tokens-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .session-token-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      min-width: 50px;
+    }
+
+    .session-token-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-primary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .session-token-progress {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .session-token-progress.low { background: linear-gradient(90deg, #10b981, #34d399); }
+    .session-token-progress.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .session-token-progress.high { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+    .session-token-percent {
+      font-size: 10px;
+      font-weight: 600;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .session-token-percent.low { color: #34d399; }
+    .session-token-percent.medium { color: #fbbf24; }
+    .session-token-percent.high { color: #f87171; }
+
+    .session-click-hint {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: right;
+      margin-top: 6px;
+      opacity: 0;
+      transition: opacity 0.2s;
     }
 
     .agent-error {
@@ -1899,9 +2003,11 @@
             sessionFileSelect.appendChild(option);
           });
         }
+        return data;
       } catch (err) {
         console.error('Error loading session files:', err);
         showToast('Failed to load session files', 'error');
+        throw err;
       }
     }
 
@@ -2076,18 +2182,89 @@
           return;
         }
         
-        container.innerHTML = data.sessions.map(session => `
-          <div class="agent-session-item">
-            <span class="agent-session-id">${escapeHtml(session.id?.substring(0, 12) || session.sessionId?.substring(0, 12) || 'Unknown')}...</span>
-            <span class="agent-session-channel">${escapeHtml(session.channel || session.type || '')}</span>
-          </div>
-        `).join('');
+        container.innerHTML = data.sessions.map(session => {
+          const sessionId = session.id || session.sessionId || 'Unknown';
+          const channel = session.channel || session.type || 'unknown';
+          const model = session.model || 'unknown';
+          const totalTokens = session.totalTokens || 0;
+          const percentUsed = session.percentUsed || 0;
+          const updatedAt = session.updatedAt ? formatRelativeTime(new Date(session.updatedAt)) : 'Unknown';
+          
+          // Determine token bar color class
+          let tokenColorClass = 'low';
+          if (percentUsed >= 80) tokenColorClass = 'high';
+          else if (percentUsed >= 50) tokenColorClass = 'medium';
+          
+          // Format token display
+          const formattedTokens = totalTokens >= 1000 
+            ? (totalTokens / 1000).toFixed(1) + 'K' 
+            : totalTokens.toString();
+          
+          return `
+            <div class="agent-session-item" onclick="event.stopPropagation(); navigateToSessionLog('${escapeHtml(sessionId)}')">
+              <div class="session-header-row">
+                <span class="agent-session-id">${escapeHtml(sessionId.substring(0, 16))}...</span>
+                <span class="agent-session-channel ${escapeHtml(channel)}">${escapeHtml(channel)}</span>
+              </div>
+              <div class="session-meta-row">
+                <div class="session-meta-item">
+                  <span class="icon">🤖</span>
+                  <span class="value">${escapeHtml(model)}</span>
+                </div>
+                <div class="session-meta-item">
+                  <span class="icon">⏱️</span>
+                  <span class="value">${escapeHtml(updatedAt)}</span>
+                </div>
+              </div>
+              <div class="session-tokens-row">
+                <span class="session-token-label">Tokens</span>
+                <div class="session-token-bar">
+                  <div class="session-token-progress ${tokenColorClass}" style="width: ${Math.min(percentUsed, 100)}%"></div>
+                </div>
+                <span class="session-token-percent ${tokenColorClass}">${percentUsed}%</span>
+              </div>
+              <div class="session-click-hint">📋 Click to view logs</div>
+            </div>
+          `;
+        }).join('');
       } catch (err) {
         const container = document.getElementById(`sessions-${agentId}`);
         if (container) {
           container.innerHTML = `<div class="agent-error">Error: ${err.message}</div>`;
         }
       }
+    }
+
+    // Navigate to Session Logs tab and select the session
+    function navigateToSessionLog(sessionId) {
+      // Switch to sessions tab
+      currentTab = 'sessions';
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-btn')[1].classList.add('active'); // Sessions tab is index 1
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.getElementById('sessions-tab').classList.add('active');
+      
+      // Load session files if not already loaded
+      loadSessionFiles().then(() => {
+        // Try to find and select the session
+        const select = document.getElementById('session-file-select');
+        let found = false;
+        
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === sessionId || 
+              select.options[i].value.startsWith(sessionId.substring(0, 8))) {
+            select.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        
+        if (found) {
+          loadSessionLog();
+        } else {
+          showToast(`Session log not found: ${sessionId.substring(0, 8)}...`, 'error');
+        }
+      });
     }
 
     async function refreshAgent(agentId) {
