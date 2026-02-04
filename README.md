@@ -81,9 +81,25 @@ ws.send(JSON.stringify({ type: 'refresh' }));
 | `/tmp/openclaw/` | Gateway runtime logs |
 | `~/.openclaw/logs/` | Command & session logs |
 
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+
+1. 🍴 Fork the repo
+2. 🌿 Create a branch (`git checkout -b feature/awesome`)
+3. 💾 Commit changes (`git commit -m 'Add awesome feature'`)
+4. 📤 Push (`git push origin feature/awesome`)
+5. 🎉 Open a Pull Request
+
+## 💬 Community
+
+- 🐛 [Report bugs](https://github.com/CharlesYWL/openclaw-dashboard/issues)
+- 💡 [Request features](https://github.com/CharlesYWL/openclaw-dashboard/issues)
+- 🌟 Star the repo if you find it useful!
+
 ## 📄 License
 
-MIT
+[MIT](LICENSE) © 2026 Charles Yin
 
 ---
 
