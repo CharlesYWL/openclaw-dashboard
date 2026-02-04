@@ -1195,13 +1195,13 @@
 
     <!-- Tab Navigation -->
     <div class="tab-nav">
-      <button class="tab-btn active" onclick="switchTab('gateway')">📋 Gateway Logs</button>
+      <button class="tab-btn" onclick="switchTab('gateway')">📋 Gateway Logs</button>
       <button class="tab-btn" onclick="switchTab('sessions')">💬 Session Logs</button>
-      <button class="tab-btn" onclick="switchTab('agents')">🤖 Agents</button>
+      <button class="tab-btn active" onclick="switchTab('agents')">🤖 Agents</button>
     </div>
 
     <!-- Gateway Logs Tab -->
-    <div id="gateway-tab" class="tab-content active">
+    <div id="gateway-tab" class="tab-content">
       <div class="log-viewer">
         <div class="log-header">
           <div class="log-controls">
@@ -1267,7 +1267,7 @@
     </div>
 
     <!-- Agents Tab -->
-    <div id="agents-tab" class="tab-content">
+    <div id="agents-tab" class="tab-content active">
       <div class="agents-header">
         <h2>🚀 Agent Fleet</h2>
         <button class="btn-refresh" onclick="refreshAllAgents()" id="btn-refresh-agents">
@@ -1370,7 +1370,7 @@
 
     // ===== State =====
     let ws = null;
-    let currentTab = 'gateway';
+    let currentTab = 'agents';
     let currentLogFile = null;
     let currentSessionId = null;
     let sessionTotalLines = 0;
@@ -2034,7 +2034,12 @@
       }
       
       if (tab === 'agents') {
-        loadAgents();
+        loadAgents().then(() => {
+          // Re-load sessions if an agent was expanded
+          if (expandedAgentId) {
+            loadAgentSessions(expandedAgentId);
+          }
+        });
       }
     }
 
@@ -2332,6 +2337,7 @@
     checkStatus();
     loadLogFiles();
     fetchMetrics();
+    loadAgents();  // Load agents on startup (default tab)
     setInterval(checkStatus, 30000);
     setInterval(fetchMetrics, 5000);  // Refresh metrics every 5 seconds
   </script>
