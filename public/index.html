@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenClaw Gateway Dashboard</title>
+  <title>OpenClaw Dashboard</title>
   <style>
     * {
       margin: 0;
@@ -12,487 +12,836 @@
     }
 
     :root {
-      --bg-primary: #0f0f0f;
-      --bg-secondary: #1a1a1a;
-      --bg-tertiary: #252525;
-      --border-color: #333;
+      --bg-main: #0d0d0d;
+      --bg-sidebar: #141414;
+      --bg-card: #1a1a1a;
+      --bg-card-hover: #222;
+      --border-color: #2a2a2a;
+      --accent: #4ade80;
+      --accent-dim: #22c55e;
       --text-primary: #e0e0e0;
       --text-secondary: #888;
-      --text-muted: #6b7280;
-    }
-
-    [data-theme="light"] {
-      --bg-primary: #f5f5f5;
-      --bg-secondary: #ffffff;
-      --bg-tertiary: #e5e5e5;
-      --border-color: #d1d5db;
-      --text-primary: #1f2937;
-      --text-secondary: #4b5563;
-      --text-muted: #6b7280;
+      --text-muted: #555;
+      --status-healthy: #4ade80;
+      --status-idle: #fbbf24;
+      --status-offline: #f87171;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+      --orange: #fbbf24;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: var(--bg-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+      background: var(--bg-main);
       color: var(--text-primary);
       min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    /* System Metrics Bar */
-    .metrics-bar {
       display: flex;
-      gap: 24px;
-      padding: 16px 20px;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
     }
 
-    .metric-item {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .metric-header {
+    /* ===== Sidebar ===== */
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
+      flex-direction: column;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
     }
 
-    .metric-label {
-      font-size: 13px;
-      color: var(--text-secondary);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .metric-value {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .metric-progress {
-      height: 8px;
-      background: var(--bg-tertiary);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .metric-progress-bar {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 0.5s ease, background 0.3s;
-    }
-
-    .metric-progress-bar.cpu { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-    .metric-progress-bar.memory { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
-    .metric-progress-bar.disk { background: linear-gradient(90deg, #10b981, #34d399); }
-
-    .metric-progress-bar.warning { background: linear-gradient(90deg, #f59e0b, #fbbf24) !important; }
-    .metric-progress-bar.critical { background: linear-gradient(90deg, #ef4444, #f87171) !important; }
-
-    .metric-details {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      padding-bottom: 20px;
+    .sidebar-header {
+      padding: 20px 16px;
       border-bottom: 1px solid var(--border-color);
     }
 
-    .header-left {
+    .sidebar-logo {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    h1 {
-      font-size: 24px;
+      gap: 10px;
+      font-size: 18px;
       font-weight: 600;
       color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .sidebar-logo .emoji {
+      font-size: 24px;
+    }
+
+    .sidebar-time {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+    }
+
+    .nav-item {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    h1 .logo {
-      font-size: 28px;
-    }
-
-    /* Theme Toggle */
-    .theme-toggle {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 8px 12px;
+      gap: 10px;
+      padding: 10px 16px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
       cursor: pointer;
-      font-size: 18px;
-      transition: all 0.2s;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: rgba(74, 222, 128, 0.05);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(74, 222, 128, 0.1);
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+
+    .nav-section {
+      padding: 16px 16px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .agent-nav-item {
       display: flex;
       align-items: center;
-      justify-content: center;
-    }
-
-    .theme-toggle:hover {
-      background: var(--bg-tertiary);
-      transform: scale(1.05);
-    }
-
-    /* Logout Button */
-    .logout-btn {
-      background: transparent;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
+      justify-content: space-between;
       padding: 8px 16px;
       color: var(--text-secondary);
       font-size: 13px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
 
-    .logout-btn:hover {
-      background: #991b1b;
-      border-color: #991b1b;
-      color: #fff;
+    .agent-nav-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
     }
 
-    .status-badge {
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .agent-nav-item.active {
+      background: rgba(74, 222, 128, 0.08);
+      color: var(--accent);
     }
 
-    .status-running {
-      background: #1a4d1a;
-      color: #4ade80;
-      border: 1px solid #2d6a2d;
-    }
-
-    .status-stopped {
-      background: #4d1a1a;
-      color: #f87171;
-      border: 1px solid #6a2d2d;
-    }
-
-    .status-unknown {
-      background: #4d4d1a;
-      color: #fbbf24;
-      border: 1px solid #6a6a2d;
-    }
-
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
+    .agent-nav-left {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-start {
-      background: #166534;
-      color: #fff;
-    }
-
-    .btn-start:hover:not(:disabled) {
-      background: #15803d;
-    }
-
-    .btn-stop {
-      background: #991b1b;
-      color: #fff;
-    }
-
-    .btn-stop:hover:not(:disabled) {
-      background: #b91c1c;
-    }
-
-    .btn-restart {
-      background: #1e40af;
-      color: #fff;
-    }
-
-    .btn-restart:hover:not(:disabled) {
-      background: #1d4ed8;
-    }
-
-    .btn-refresh {
-      background: #374151;
-      color: #fff;
-    }
-
-    .btn-refresh:hover:not(:disabled) {
-      background: #4b5563;
-    }
-
-    /* Tab Navigation */
-    .tab-nav {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 16px;
-      background: var(--bg-secondary);
-      padding: 4px;
-      border-radius: 10px;
-      width: fit-content;
-    }
-
-    .tab-btn {
-      padding: 10px 24px;
-      background: transparent;
-      color: var(--text-secondary);
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .tab-btn:hover {
-      color: var(--text-primary);
-      background: var(--bg-tertiary);
-    }
-
-    .tab-btn.active {
-      background: var(--border-color);
-      color: var(--text-primary);
-    }
-
-    .log-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .log-controls h2 {
+    .agent-nav-emoji {
       font-size: 16px;
-      font-weight: 500;
     }
 
-    select {
-      padding: 8px 12px;
-      border-radius: 6px;
+    .agent-nav-badge {
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    .sidebar-actions {
+      padding: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
       border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
+      border-radius: 8px;
+      color: var(--text-secondary);
       font-size: 13px;
       cursor: pointer;
-      max-width: 400px;
+      transition: all 0.15s;
+      margin-bottom: 8px;
     }
 
-    .log-viewer {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      overflow: hidden;
+    .action-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
     }
 
-    .log-header {
-      padding: 12px 16px;
-      background: var(--bg-tertiary);
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .log-header span {
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .connection-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-    }
-
-    .connection-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #f87171;
-    }
-
-    .connection-dot.connected {
-      background: #4ade80;
-    }
-
-    #log-container, #session-log-container {
-      height: 500px;
-      overflow-y: auto;
-      padding: 16px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 13px;
-      line-height: 1.6;
-      background: var(--bg-secondary);
-    }
-
-    .log-line {
-      margin: 2px 0;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-
-    .log-line.error {
+    .action-btn.danger:hover {
+      background: #451a1a;
+      border-color: #6a2d2d;
       color: #f87171;
     }
 
-    .log-line.warn {
-      color: #fbbf24;
+    /* ===== Main Content ===== */
+    .main-content {
+      flex: 1;
+      margin-left: 220px;
+      padding: 24px;
+      overflow-y: auto;
+      min-height: 100vh;
     }
 
-    .log-line.info {
-      color: #60a5fa;
+    /* ===== Top Status Bar ===== */
+    .top-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
 
-    /* JSON Syntax Highlighting */
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .status-label {
+      color: var(--text-muted);
+    }
+
+    .status-value {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--status-healthy);
+    }
+
+    .status-dot.offline {
+      background: var(--status-offline);
+    }
+
+    .status-dot.warning {
+      background: var(--status-idle);
+    }
+
+    /* ===== Stats Cards ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 1200px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* ===== Fleet Health ===== */
+    .fleet-health {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .fleet-health-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .fleet-health-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .fleet-health-summary {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .fleet-health-bar {
+      height: 10px;
+      background: var(--bg-main);
+      border-radius: 5px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .health-segment {
+      height: 100%;
+      transition: width 0.3s;
+    }
+
+    .health-segment.healthy {
+      background: var(--status-healthy);
+    }
+
+    .health-segment.idle {
+      background: var(--status-idle);
+    }
+
+    .health-segment.offline {
+      background: var(--status-offline);
+    }
+
+    /* ===== Agent Cards Grid ===== */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 1000px) {
+      .agents-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .agent-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .agent-card:hover {
+      border-color: #3a3a3a;
+    }
+
+    .agent-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .agent-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .agent-emoji-big {
+      font-size: 32px;
+    }
+
+    .agent-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .agent-id-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .agent-status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .agent-status-badge.healthy {
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--status-healthy);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .agent-status-badge.idle {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--status-idle);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .agent-status-badge.offline {
+      background: rgba(248, 113, 113, 0.15);
+      color: var(--status-offline);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    /* Status Indicators Row */
+    .status-indicators {
+      display: flex;
+      gap: 16px;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .indicator-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .indicator-dot.on {
+      background: var(--status-healthy);
+      box-shadow: 0 0 6px var(--status-healthy);
+    }
+
+    .indicator-dot.off {
+      background: var(--text-muted);
+    }
+
+    .indicator-dot.warn {
+      background: var(--status-idle);
+    }
+
+    /* Agent Body */
+    .agent-card-body {
+      padding: 16px;
+    }
+
+    .agent-info-row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .info-block {
+      flex: 1;
+      min-width: 100px;
+    }
+
+    .info-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      font-size: 13px;
+      color: var(--text-primary);
+      font-family: monospace;
+    }
+
+    /* Context Progress */
+    .context-progress {
+      margin-bottom: 16px;
+    }
+
+    .context-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .context-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .context-percent {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .context-percent.low { color: var(--status-healthy); }
+    .context-percent.medium { color: var(--status-idle); }
+    .context-percent.high { color: var(--status-offline); }
+
+    .context-bar {
+      height: 6px;
+      background: var(--bg-main);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .context-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .context-fill.low { background: var(--status-healthy); }
+    .context-fill.medium { background: var(--status-idle); }
+    .context-fill.high { background: var(--status-offline); }
+
+    /* Channels */
+    .channels-section {
+      margin-bottom: 16px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .channel-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .channel-tag {
+      padding: 4px 10px;
+      background: var(--bg-main);
+      border-radius: 12px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .channel-tag.telegram { background: #0088cc20; color: #0088cc; }
+    .channel-tag.discord { background: #5865f220; color: #5865f2; }
+    .channel-tag.whatsapp { background: #25d36620; color: #25d366; }
+
+    /* Sessions List */
+    .sessions-section {
+      margin-bottom: 16px;
+    }
+
+    .session-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: var(--bg-main);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .session-key {
+      color: var(--blue);
+      font-family: monospace;
+      max-width: 60%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .session-time {
+      color: var(--text-muted);
+    }
+
+    /* Cron Info */
+    .cron-info {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    /* Agent Actions */
+    .agent-card-footer {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+
+    .agent-btn {
+      padding: 6px 12px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .agent-btn:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .agent-btn.primary {
+      background: rgba(74, 222, 128, 0.1);
+      border-color: rgba(74, 222, 128, 0.3);
+      color: var(--accent);
+    }
+
+    .agent-btn.primary:hover {
+      background: rgba(74, 222, 128, 0.2);
+    }
+
+    .agent-btn.danger:hover {
+      background: rgba(248, 113, 113, 0.1);
+      border-color: rgba(248, 113, 113, 0.3);
+      color: var(--status-offline);
+    }
+
+    .agent-last-seen {
+      flex: 1;
+      text-align: right;
+      font-size: 11px;
+      color: var(--text-muted);
+      align-self: center;
+    }
+
+    /* ===== Logs Modal ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      width: 90%;
+      max-width: 1200px;
+      max-height: 85vh;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    .modal-controls {
+      display: flex;
+      gap: 12px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .modal-controls select {
+      padding: 8px 12px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+      max-width: 300px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      background: var(--bg-main);
+    }
+
+    .log-line {
+      padding: 2px 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .log-line.error { color: var(--status-offline); }
+    .log-line.warn { color: var(--status-idle); }
+    .log-line.info { color: var(--blue); }
+
     .json-container {
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-radius: 8px;
-      padding: 12px;
+      background: #0a0a0a;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
       margin: 4px 0;
       overflow-x: auto;
     }
 
-    [data-theme="light"] .json-container {
-      background: #f6f8fa;
-      border-color: #d0d7de;
+    .json-key { color: #7ee787; }
+    .json-string { color: #a5d6ff; }
+    .json-number { color: #ffa657; }
+    .json-boolean { color: #ff7b72; }
+    .json-null { color: #8b949e; }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 2000;
     }
 
-    .json-key {
-      color: #7ee787;
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
     }
 
-    [data-theme="light"] .json-key {
-      color: #116329;
+    .toast.success {
+      border-color: var(--status-healthy);
     }
 
-    .json-string {
-      color: #a5d6ff;
+    .toast.error {
+      border-color: var(--status-offline);
     }
 
-    [data-theme="light"] .json-string {
-      color: #0a3069;
+    /* ===== Loading ===== */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 40px;
+      color: var(--text-muted);
     }
 
-    .json-number {
-      color: #ffa657;
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
 
-    [data-theme="light"] .json-number {
-      color: #953800;
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
-    .json-boolean {
-      color: #ff7b72;
-    }
-
-    [data-theme="light"] .json-boolean {
-      color: #cf222e;
-    }
-
-    .json-null {
-      color: #8b949e;
-    }
-
-    .json-brace {
-      color: #c9d1d9;
-    }
-
-    [data-theme="light"] .json-brace {
-      color: #24292f;
-    }
-
-    .json-bracket {
-      color: #c9d1d9;
-    }
-
-    [data-theme="light"] .json-bracket {
-      color: #24292f;
-    }
-
-    .json-colon {
-      color: #c9d1d9;
-    }
-
-    .json-comma {
-      color: #c9d1d9;
-    }
-
-    /* Session Log Styles */
+    /* Session Entry Styles */
     .session-entry {
       margin-bottom: 12px;
       border-left: 3px solid var(--border-color);
       padding-left: 12px;
     }
 
-    .session-entry.type-message {
-      border-left-color: #60a5fa;
-    }
-
-    .session-entry.type-tool_use {
-      border-left-color: #fbbf24;
-    }
-
-    .session-entry.type-tool_result {
-      border-left-color: #4ade80;
-    }
-
-    .session-entry.type-session {
-      border-left-color: #a78bfa;
-    }
-
-    .session-entry.type-error {
-      border-left-color: #f87171;
-    }
+    .session-entry.type-message { border-left-color: var(--blue); }
+    .session-entry.type-tool_use { border-left-color: var(--orange); }
+    .session-entry.type-tool_result { border-left-color: var(--status-healthy); }
+    .session-entry.type-session { border-left-color: var(--purple); }
+    .session-entry.type-error { border-left-color: var(--status-offline); }
 
     .session-entry-header {
       display: flex;
@@ -505,823 +854,283 @@
     .entry-type {
       padding: 2px 8px;
       border-radius: 4px;
-      font-weight: 500;
+      font-weight: 600;
       text-transform: uppercase;
       font-size: 10px;
     }
 
-    .entry-type.message { background: #1e3a5f; color: #60a5fa; }
-    .entry-type.tool_use { background: #422006; color: #fbbf24; }
-    .entry-type.tool_result { background: #14532d; color: #4ade80; }
-    .entry-type.session { background: #3b0764; color: #a78bfa; }
-    .entry-type.model_change { background: #164e63; color: #22d3ee; }
-    .entry-type.thinking_level_change { background: #365314; color: #bef264; }
-    .entry-type.custom { background: #374151; color: #9ca3af; }
-    .entry-type.error { background: #450a0a; color: #f87171; }
+    .entry-type.message { background: #1e3a5f; color: var(--blue); }
+    .entry-type.tool_use { background: #422006; color: var(--orange); }
+    .entry-type.tool_result { background: #14532d; color: var(--status-healthy); }
+    .entry-type.session { background: #3b0764; color: var(--purple); }
+    .entry-type.error { background: #450a0a; color: var(--status-offline); }
 
-    .entry-timestamp {
-      color: var(--text-muted);
-    }
+    .entry-timestamp { color: var(--text-muted); }
+    .entry-id { color: var(--text-muted); font-family: monospace; }
 
-    .entry-id {
-      color: var(--text-muted);
-      font-family: monospace;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    .session-info {
-      background: var(--bg-tertiary);
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-
-    .session-info-item {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .session-info-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .session-info-value {
-      font-size: 13px;
-      color: var(--text-primary);
-      font-family: monospace;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 12px 20px;
-      border-radius: 8px;
-      background: #1f2937;
-      color: #fff;
-      font-size: 14px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.3s;
-      z-index: 1000;
-    }
-
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    .toast.success {
-      background: #166534;
-    }
-
-    .toast.error {
-      background: #991b1b;
-    }
-
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid transparent;
-      border-top: 2px solid currentColor;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .auto-scroll-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: var(--text-secondary);
-    }
-
-    .auto-scroll-toggle input {
-      cursor: pointer;
-    }
-
-    .loading {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
-      color: var(--text-muted);
-    }
-
-    .loading .spinner {
-      width: 24px;
-      height: 24px;
-      margin-right: 12px;
-    }
-
-    /* Search Styles */
-    .search-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-      max-width: 400px;
-    }
-
-    .search-input {
-      flex: 1;
-      padding: 8px 12px;
-      padding-left: 36px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      font-size: 13px;
-      font-family: inherit;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: #60a5fa;
-      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
-    }
-
-    .search-input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .search-wrapper {
-      position: relative;
-      flex: 1;
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      pointer-events: none;
-      font-size: 14px;
-    }
-
-    .search-clear {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 4px;
-      font-size: 14px;
-      line-height: 1;
-      border-radius: 4px;
-      display: none;
-    }
-
-    .search-clear:hover {
-      color: var(--text-primary);
-      background: var(--border-color);
-    }
-
-    .search-input:not(:placeholder-shown) + .search-clear {
-      display: block;
-    }
-
-    .search-stats {
-      font-size: 12px;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    .search-help {
-      font-size: 11px;
-      color: var(--text-muted);
-      padding: 8px 16px;
-      background: var(--bg-primary);
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .search-help code {
-      background: var(--border-color);
-      padding: 1px 4px;
-      border-radius: 3px;
-      color: #a78bfa;
-    }
-
-    /* Match highlighting */
-    .search-match {
-      background: rgba(250, 204, 21, 0.3);
-      color: #fde047;
-      border-radius: 2px;
-      padding: 0 1px;
-    }
-
-    [data-theme="light"] .search-match {
-      background: rgba(250, 204, 21, 0.5);
-      color: #854d0e;
-    }
-
-    .log-line.hidden,
-    .session-entry.hidden {
-      display: none;
-    }
-
+    /* No results */
     .no-results {
       text-align: center;
       padding: 40px;
       color: var(--text-muted);
     }
 
-    .no-results .no-results-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-    }
+    .no-results-icon { font-size: 48px; margin-bottom: 12px; }
+    .no-results-text { font-size: 14px; }
 
-    .no-results .no-results-text {
-      font-size: 14px;
-    }
-
-    .no-results .no-results-hint {
-      font-size: 12px;
-      margin-top: 8px;
-    }
-
-    /* Loading indicator for search */
-    .search-loading {
+    /* Connection indicator */
+    .connection-indicator {
       display: flex;
       align-items: center;
       gap: 6px;
       font-size: 12px;
-      color: #fbbf24;
-    }
-
-    .search-loading .spinner {
-      width: 12px;
-      height: 12px;
-    }
-
-    /* Load more button */
-    .load-more-container {
-      text-align: center;
-      padding: 12px;
-      background: var(--bg-primary);
-      border-top: 1px solid var(--border-color);
-    }
-
-    .load-more-btn {
-      padding: 8px 24px;
-      background: #374151;
-      color: var(--text-primary);
-      border: 1px solid #4b5563;
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .load-more-btn:hover {
-      background: #4b5563;
-    }
-
-    .load-more-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .truncation-notice {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    /* ===== Agent Fleet Styles ===== */
-    .agents-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .agents-header h2 {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .agents-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 16px;
-    }
-
-    .agent-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 20px;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-
-    .agent-card:hover {
-      border-color: #60a5fa;
-      box-shadow: 0 4px 12px rgba(96, 165, 250, 0.1);
-    }
-
-    .agent-card.expanded {
-      grid-column: span 2;
-    }
-
-    @media (max-width: 768px) {
-      .agent-card.expanded {
-        grid-column: span 1;
-      }
-    }
-
-    .agent-card-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .agent-emoji {
-      font-size: 32px;
-      line-height: 1;
-    }
-
-    .agent-info {
-      flex: 1;
-    }
-
-    .agent-name {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 2px;
-    }
-
-    .agent-id {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-family: monospace;
-    }
-
-    .agent-status-badge {
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .agent-status-badge.online {
-      background: #1a4d1a;
-      color: #4ade80;
-      border: 1px solid #2d6a2d;
-    }
-
-    .agent-status-badge.offline {
-      background: #4d1a1a;
-      color: #f87171;
-      border: 1px solid #6a2d2d;
-    }
-
-    .agent-status-badge.unknown {
-      background: #4d4d1a;
-      color: #fbbf24;
-      border: 1px solid #6a6a2d;
-    }
-
-    .agent-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border-color);
-    }
-
-    .agent-meta-item {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .agent-meta-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .agent-meta-value {
-      font-size: 13px;
-      color: var(--text-primary);
-      font-family: monospace;
-    }
-
-    .agent-details {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border-color);
-      display: none;
-    }
-
-    .agent-card.expanded .agent-details {
-      display: block;
-    }
-
-    .agent-sessions-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .agent-sessions-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    .agent-sessions-count {
-      font-size: 12px;
-      color: var(--text-muted);
-      background: var(--bg-tertiary);
-      padding: 2px 8px;
-      border-radius: 10px;
-    }
-
-    .agent-sessions-list {
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .agent-session-item {
-      padding: 12px;
-      background: var(--bg-tertiary);
-      border-radius: 8px;
-      margin-bottom: 8px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: 1px solid transparent;
-    }
-
-    .agent-session-item:hover {
-      border-color: #60a5fa;
-      background: var(--bg-secondary);
-    }
-
-    .agent-session-item:hover .session-click-hint {
-      opacity: 1;
-    }
-
-    .session-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .agent-session-id {
-      font-family: monospace;
-      color: #60a5fa;
-      font-weight: 500;
-    }
-
-    .agent-session-channel {
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 500;
-      text-transform: uppercase;
-      background: #374151;
-      color: var(--text-secondary);
-    }
-
-    .agent-session-channel.telegram { background: #0088cc20; color: #0088cc; }
-    .agent-session-channel.discord { background: #5865f220; color: #5865f2; }
-    .agent-session-channel.subagent { background: #8b5cf620; color: #a78bfa; }
-    .agent-session-channel.cron { background: #f59e0b20; color: #fbbf24; }
-    .agent-session-channel.main { background: #10b98120; color: #34d399; }
-
-    .session-meta-row {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-
-    .session-meta-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
       color: var(--text-muted);
     }
 
-    .session-meta-item .icon {
-      font-size: 12px;
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--status-offline);
     }
 
-    .session-meta-item .value {
-      color: var(--text-secondary);
-    }
-
-    .session-tokens-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .session-token-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      min-width: 50px;
-    }
-
-    .session-token-bar {
-      flex: 1;
-      height: 6px;
-      background: var(--bg-primary);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .session-token-progress {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.3s;
-    }
-
-    .session-token-progress.low { background: linear-gradient(90deg, #10b981, #34d399); }
-    .session-token-progress.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-    .session-token-progress.high { background: linear-gradient(90deg, #ef4444, #f87171); }
-
-    .session-token-percent {
-      font-size: 10px;
-      font-weight: 600;
-      min-width: 36px;
-      text-align: right;
-    }
-
-    .session-token-percent.low { color: #34d399; }
-    .session-token-percent.medium { color: #fbbf24; }
-    .session-token-percent.high { color: #f87171; }
-
-    .session-click-hint {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-align: right;
-      margin-top: 6px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .agent-error {
-      margin-top: 12px;
-      padding: 10px;
-      background: #451a1a;
-      border: 1px solid #6a2d2d;
-      border-radius: 6px;
-      color: #f87171;
-      font-size: 12px;
-    }
-
-    .agent-refresh-btn {
-      padding: 6px 12px;
-      background: transparent;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      color: var(--text-secondary);
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .agent-refresh-btn:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .agent-workspace {
-      word-break: break-all;
-      color: var(--text-secondary);
+    .connection-dot.connected {
+      background: var(--status-healthy);
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- System Metrics Bar -->
-    <div class="metrics-bar">
-      <div class="metric-item">
-        <div class="metric-header">
-          <span class="metric-label">💻 CPU</span>
-          <span class="metric-value" id="cpu-value">--%</span>
-        </div>
-        <div class="metric-progress">
-          <div class="metric-progress-bar cpu" id="cpu-bar" style="width: 0%"></div>
-        </div>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <span class="emoji">🐾</span>
+        <span>OpenClaw</span>
       </div>
-      <div class="metric-item">
-        <div class="metric-header">
-          <span class="metric-label">🧠 Memory</span>
-          <span class="metric-value" id="memory-value">--%</span>
-        </div>
-        <div class="metric-progress">
-          <div class="metric-progress-bar memory" id="memory-bar" style="width: 0%"></div>
-        </div>
-        <div class="metric-details" id="memory-details">-- / --</div>
-      </div>
-      <div class="metric-item">
-        <div class="metric-header">
-          <span class="metric-label">💾 Disk</span>
-          <span class="metric-value" id="disk-value">--%</span>
-        </div>
-        <div class="metric-progress">
-          <div class="metric-progress-bar disk" id="disk-bar" style="width: 0%"></div>
-        </div>
-        <div class="metric-details" id="disk-details">-- / --</div>
-      </div>
+      <div class="sidebar-time" id="sidebar-time">--:--:--</div>
     </div>
 
-    <header>
-      <div class="header-left">
-        <h1>
-          <span class="logo">🦞</span>
-          OpenClaw Gateway
-        </h1>
-        <span id="status-badge" class="status-badge status-unknown">Checking...</span>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="switchView('overview')">
+        📊 Overview
       </div>
-      <div class="header-right">
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-        <button class="logout-btn" onclick="logout()">Logout</button>
-      </div>
-    </header>
 
-    <div class="controls">
-      <button id="btn-start" class="btn-start" onclick="gatewayAction('start')">
-        <span>▶</span> Start
+      <div class="nav-section">Agents</div>
+      <div id="agents-nav-list">
+        <!-- Agent nav items will be populated here -->
+      </div>
+
+      <div class="nav-section">Logs</div>
+      <div class="nav-item" onclick="openLogsModal('gateway')">
+        📋 Gateway Logs
+      </div>
+      <div class="nav-item" onclick="openLogsModal('sessions')">
+        💬 Session Logs
+      </div>
+    </nav>
+
+    <div class="sidebar-actions">
+      <button class="action-btn" onclick="refreshAll()">
+        🔄 Refresh All
       </button>
-      <button id="btn-stop" class="btn-stop" onclick="gatewayAction('stop')">
-        <span>■</span> Stop
-      </button>
-      <button id="btn-restart" class="btn-restart" onclick="gatewayAction('restart')">
-        <span>↻</span> Restart
-      </button>
-      <button id="btn-refresh-status" class="btn-refresh" onclick="checkStatus()">
-        <span>🔄</span> Refresh Status
+      <button class="action-btn danger" onclick="logout()">
+        → Logout
       </button>
     </div>
+  </aside>
 
-    <!-- Tab Navigation -->
-    <div class="tab-nav">
-      <button class="tab-btn" onclick="switchTab('gateway')">📋 Gateway Logs</button>
-      <button class="tab-btn" onclick="switchTab('sessions')">💬 Session Logs</button>
-      <button class="tab-btn active" onclick="switchTab('agents')">🤖 Agents</button>
-    </div>
-
-    <!-- Gateway Logs Tab -->
-    <div id="gateway-tab" class="tab-content">
-      <div class="log-viewer">
-        <div class="log-header">
-          <div class="log-controls">
-            <span>Log File: </span>
-            <select id="log-file-select" onchange="switchLogFile()">
-              <option value="">Loading...</option>
-            </select>
-          </div>
-          <div class="search-container">
-            <div class="search-wrapper">
-              <span class="search-icon">🔍</span>
-              <input type="text" class="search-input" id="gateway-search" placeholder="Search logs... (e.g., error, level:info)" oninput="filterGatewayLogs()">
-              <button class="search-clear" onclick="clearGatewaySearch()">✕</button>
-            </div>
-            <span class="search-stats" id="gateway-search-stats"></span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 20px;">
-            <label class="auto-scroll-toggle">
-              <input type="checkbox" id="auto-scroll" checked>
-              Auto-scroll
-            </label>
-            <div class="connection-status">
-              <div id="connection-dot" class="connection-dot"></div>
-              <span id="connection-text">Disconnected</span>
-            </div>
-          </div>
-        </div>
-        <div class="search-help" id="gateway-search-help" style="display: none;">
-          💡 Tip: Use <code>field:value</code> for specific fields (e.g., <code>level:error</code>, <code>type:request</code>) or just type to search everywhere
-        </div>
-        <div id="log-container"></div>
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Top Status Bar -->
+    <div class="top-status-bar">
+      <div class="status-item">
+        <div class="status-dot" id="gateway-status-dot"></div>
+        <span class="status-label">Gateway</span>
+        <span class="status-value" id="gateway-status-text">Checking...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Host:</span>
+        <span class="status-value" id="hostname-value">--</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Load:</span>
+        <span class="status-value" id="load-value">--%</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">RAM:</span>
+        <span class="status-value" id="ram-value">--%</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Disk:</span>
+        <span class="status-value" id="disk-value">--%</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Uptime:</span>
+        <span class="status-value" id="uptime-value">--</span>
       </div>
     </div>
 
-    <!-- Session Logs Tab -->
-    <div id="sessions-tab" class="tab-content">
-      <div class="log-viewer">
-        <div class="log-header">
-          <div class="log-controls">
-            <span>Session: </span>
-            <select id="session-file-select" onchange="loadSessionLog()">
-              <option value="">Select a session...</option>
-            </select>
-          </div>
-          <div class="search-container">
-            <div class="search-wrapper">
-              <span class="search-icon">🔍</span>
-              <input type="text" class="search-input" id="session-search" placeholder="Search session... (e.g., role:user, type:tool_use)" oninput="filterSessionLogs()">
-              <button class="search-clear" onclick="clearSessionSearch()">✕</button>
-            </div>
-            <span class="search-stats" id="session-search-stats"></span>
-          </div>
-          <button class="btn-refresh" onclick="loadSessionFiles()" style="padding: 6px 12px; font-size: 12px;">
-            🔄 Refresh
-          </button>
-        </div>
-        <div class="search-help" id="session-search-help" style="display: none;">
-          💡 Tip: Use <code>field:value</code> for specific fields (e.g., <code>role:user</code>, <code>type:tool_use</code>, <code>name:read</code>) or just type to search everywhere
-        </div>
-        <div id="session-info-container"></div>
-        <div id="session-log-container"></div>
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Agents</div>
+        <div class="stat-value" id="stat-agents">0</div>
+        <div class="stat-sub">Registered</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Online</div>
+        <div class="stat-value" id="stat-online">0</div>
+        <div class="stat-sub" id="stat-online-sub">of 0 connected</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last Update</div>
+        <div class="stat-value" id="stat-last-update">--:--</div>
+        <div class="stat-sub" id="stat-last-update-sub">0/0 online</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Sessions</div>
+        <div class="stat-value" id="stat-sessions">0</div>
+        <div class="stat-sub">Active</div>
       </div>
     </div>
 
-    <!-- Agents Tab -->
-    <div id="agents-tab" class="tab-content active">
-      <div class="agents-header">
-        <h2>🚀 Agent Fleet</h2>
-        <button class="btn-refresh" onclick="refreshAllAgents()" id="btn-refresh-agents">
-          <span>🔄</span> Refresh All
-        </button>
+    <!-- Fleet Health -->
+    <div class="fleet-health">
+      <div class="fleet-health-header">
+        <span class="fleet-health-title">Fleet Health</span>
+        <span class="fleet-health-summary" id="fleet-health-summary">0 healthy • 0 idle • 0 offline</span>
       </div>
-      <div class="agents-grid" id="agents-grid">
-        <div class="loading"><div class="spinner"></div> Loading agents...</div>
+      <div class="fleet-health-bar" id="fleet-health-bar">
+        <!-- Health segments will be populated -->
+      </div>
+    </div>
+
+    <!-- Agent Cards -->
+    <div class="agents-grid" id="agents-grid">
+      <div class="loading">
+        <div class="spinner"></div>
+        Loading agents...
+      </div>
+    </div>
+  </main>
+
+  <!-- Logs Modal -->
+  <div class="modal-overlay" id="logs-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-title">Logs</span>
+        <button class="modal-close" onclick="closeLogsModal()">×</button>
+      </div>
+      <div class="modal-controls">
+        <select id="log-file-select" onchange="switchLogFile()">
+          <option value="">Loading...</option>
+        </select>
+        <input type="text" class="search-box" id="log-search" placeholder="Search logs..." oninput="filterLogs()">
+        <div class="connection-indicator">
+          <div class="connection-dot" id="ws-connection-dot"></div>
+          <span id="ws-connection-text">Disconnected</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);">
+          <input type="checkbox" id="auto-scroll" checked>
+          Auto-scroll
+        </label>
+      </div>
+      <div class="modal-body" id="log-container">
+        <div class="loading">
+          <div class="spinner"></div>
+          Loading logs...
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Session Logs Modal -->
+  <div class="modal-overlay" id="session-logs-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Session Logs</span>
+        <button class="modal-close" onclick="closeSessionLogsModal()">×</button>
+      </div>
+      <div class="modal-controls">
+        <select id="session-file-select" onchange="loadSessionLog()">
+          <option value="">Select a session...</option>
+        </select>
+        <input type="text" class="search-box" id="session-search" placeholder="Search session..." oninput="filterSessionLogs()">
+        <button class="agent-btn" onclick="loadSessionFiles()">🔄 Refresh</button>
+      </div>
+      <div class="modal-body" id="session-log-container">
+        <div class="no-results">
+          <div class="no-results-icon">💬</div>
+          <div class="no-results-text">Select a session to view logs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
   <div id="toast" class="toast"></div>
 
   <script>
-    // ===== Theme Management =====
-    function initTheme() {
-      const savedTheme = localStorage.getItem('theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      updateThemeButton(savedTheme);
+    // ===== State =====
+    let agentsData = [];
+    let ws = null;
+    let currentLogType = 'gateway';
+    let currentSessionId = null;
+    let searchDebounceTimer = null;
+
+    // ===== Utilities =====
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
-    function toggleTheme() {
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-      updateThemeButton(newTheme);
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    function updateThemeButton(theme) {
-      const btn = document.getElementById('theme-toggle');
-      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-      btn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    function formatRelativeTime(date) {
+      if (!date) return 'Unknown';
+      const now = new Date();
+      const diffMs = now - new Date(date);
+      const diffSecs = Math.floor(diffMs / 1000);
+      const diffMins = Math.floor(diffSecs / 60);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffSecs < 60) return `${diffSecs}s ago`;
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
     }
 
-    // ===== System Metrics =====
     function formatBytes(bytes) {
       if (bytes === 0) return '0 B';
       const k = 1024;
-      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const sizes = ['B', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
-    function updateProgressBarColor(bar, percent) {
-      bar.classList.remove('warning', 'critical');
-      if (percent >= 90) {
-        bar.classList.add('critical');
-      } else if (percent >= 75) {
-        bar.classList.add('warning');
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('sidebar-time').textContent = now.toLocaleTimeString();
+    }
+
+    // ===== Auth =====
+    async function logout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+      } catch (err) {
+        window.location.href = '/login';
       }
     }
 
+    // ===== System Metrics =====
     async function fetchMetrics() {
       try {
         const response = await fetch('/api/metrics');
@@ -1330,608 +1139,15 @@
           return;
         }
         const data = await response.json();
-        
-        // CPU
-        document.getElementById('cpu-value').textContent = data.cpu + '%';
-        const cpuBar = document.getElementById('cpu-bar');
-        cpuBar.style.width = data.cpu + '%';
-        updateProgressBarColor(cpuBar, data.cpu);
-        
-        // Memory
-        document.getElementById('memory-value').textContent = data.memory.percent + '%';
-        const memBar = document.getElementById('memory-bar');
-        memBar.style.width = data.memory.percent + '%';
-        updateProgressBarColor(memBar, data.memory.percent);
-        document.getElementById('memory-details').textContent = 
-          formatBytes(data.memory.used) + ' / ' + formatBytes(data.memory.total);
-        
-        // Disk
+
+        document.getElementById('load-value').textContent = data.cpu + '%';
+        document.getElementById('ram-value').textContent = data.memory.percent + '%';
         document.getElementById('disk-value').textContent = data.disk.percent + '%';
-        const diskBar = document.getElementById('disk-bar');
-        diskBar.style.width = data.disk.percent + '%';
-        updateProgressBarColor(diskBar, data.disk.percent);
-        document.getElementById('disk-details').textContent = 
-          formatBytes(data.disk.used) + ' / ' + formatBytes(data.disk.total);
+
+        // Set hostname
+        document.getElementById('hostname-value').textContent = window.location.hostname || 'localhost';
       } catch (err) {
-        console.error('Error fetching metrics:', err);
-      }
-    }
-
-    // ===== Logout =====
-    async function logout() {
-      try {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        window.location.href = '/login';
-      } catch (err) {
-        console.error('Logout error:', err);
-        window.location.href = '/login';
-      }
-    }
-
-    // ===== State =====
-    let ws = null;
-    let currentTab = 'agents';
-    let currentLogFile = null;
-    let currentSessionId = null;
-    let sessionTotalLines = 0;
-    
-    // Debounce timers
-    let gatewaySearchTimer = null;
-    let sessionSearchTimer = null;
-    
-    // Constants
-    const DEBOUNCE_MS = 300;
-    const SEARCH_LIMIT = 200;
-    const INITIAL_LIMIT = 500;
-    
-    // DOM elements
-    const logContainer = document.getElementById('log-container');
-    const sessionLogContainer = document.getElementById('session-log-container');
-    const sessionInfoContainer = document.getElementById('session-info-container');
-    const connectionDot = document.getElementById('connection-dot');
-    const connectionText = document.getElementById('connection-text');
-    const statusBadge = document.getElementById('status-badge');
-    const logFileSelect = document.getElementById('log-file-select');
-    const sessionFileSelect = document.getElementById('session-file-select');
-
-    // ===== Utility Functions =====
-    
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-    
-    function showToast(message, type = 'info') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `toast ${type} show`;
-      setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-    
-    function setSearchLoading(statsId, loading) {
-      const el = document.getElementById(statsId);
-      if (loading) {
-        el.innerHTML = '<span class="search-loading"><span class="spinner"></span> Searching...</span>';
-      }
-    }
-
-    // ===== JSON Syntax Highlighting =====
-    
-    function syntaxHighlightJSON(json) {
-      if (typeof json !== 'string') {
-        json = JSON.stringify(json, null, 2);
-      }
-      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      
-      return json.replace(
-        /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}\[\],:])/g,
-        function (match) {
-          let cls = 'json-number';
-          if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-              cls = 'json-key';
-              return '<span class="' + cls + '">' + match.slice(0, -1) + '</span><span class="json-colon">:</span>';
-            } else {
-              cls = 'json-string';
-            }
-          } else if (/true|false/.test(match)) {
-            cls = 'json-boolean';
-          } else if (/null/.test(match)) {
-            cls = 'json-null';
-          } else if (/[{}]/.test(match)) {
-            cls = 'json-brace';
-          } else if (/[\[\]]/.test(match)) {
-            cls = 'json-bracket';
-          } else if (/[,]/.test(match)) {
-            cls = 'json-comma';
-          }
-          return '<span class="' + cls + '">' + match + '</span>';
-        }
-      );
-    }
-
-    // Extract search terms from query
-    function extractSearchTerms(query) {
-      if (!query) return [];
-      
-      const terms = [];
-      const fieldRegex = /(\w+):(?:"([^"]+)"|'([^']+)'|(\S+))/g;
-      let match;
-      let remaining = query;
-      
-      while ((match = fieldRegex.exec(query)) !== null) {
-        terms.push(match[2] || match[3] || match[4]);
-        remaining = remaining.replace(match[0], '');
-      }
-      terms.push(...remaining.trim().split(/\s+/).filter(t => t));
-      
-      // Sort by length (longest first) to avoid partial replacements
-      return terms.filter(t => t).sort((a, b) => b.length - a.length);
-    }
-    
-    // Highlight search terms in text
-    function highlightTerms(text, query) {
-      if (!text || !query) return escapeHtml(text);
-      
-      const terms = extractSearchTerms(query);
-      let result = escapeHtml(text);
-      
-      for (const term of terms) {
-        if (!term) continue;
-        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${escaped})`, 'gi');
-        result = result.replace(regex, '<span class="search-match">$1</span>');
-      }
-      return result;
-    }
-    
-    // Highlight search terms in already-rendered HTML (preserves existing tags)
-    function highlightInHtml(html, query) {
-      if (!html || !query) return html;
-      
-      const terms = extractSearchTerms(query);
-      if (terms.length === 0) return html;
-      
-      // Only highlight text content, not inside HTML tags
-      // Split by HTML tags, highlight text parts, rejoin
-      const tagRegex = /(<[^>]+>)/g;
-      const parts = html.split(tagRegex);
-      
-      for (let i = 0; i < parts.length; i++) {
-        // Skip HTML tags (odd indices after split with capturing group)
-        if (parts[i].startsWith('<')) continue;
-        
-        // Highlight text content
-        for (const term of terms) {
-          if (!term) continue;
-          const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = new RegExp(`(${escaped})`, 'gi');
-          parts[i] = parts[i].replace(regex, '<span class="search-match">$1</span>');
-        }
-      }
-      
-      return parts.join('');
-    }
-
-    // ===== Rendering Functions =====
-    
-    function renderLogLine(item, query = '') {
-      const div = document.createElement('div');
-      div.className = 'log-line';
-      
-      if (item.parsed) {
-        const jsonContainer = document.createElement('div');
-        jsonContainer.className = 'json-container';
-        let html = syntaxHighlightJSON(item.parsed);
-        // Apply search term highlighting on top of syntax highlighting
-        if (query) {
-          html = highlightInHtml(html, query);
-        }
-        jsonContainer.innerHTML = html;
-        div.appendChild(jsonContainer);
-      } else {
-        const line = item.raw || item._raw || '';
-        if (line.toLowerCase().includes('error') || line.toLowerCase().includes('fatal')) {
-          div.classList.add('error');
-        } else if (line.toLowerCase().includes('warn')) {
-          div.classList.add('warn');
-        } else if (line.toLowerCase().includes('info')) {
-          div.classList.add('info');
-        }
-        div.innerHTML = query ? highlightTerms(line, query) : escapeHtml(line);
-      }
-      return div;
-    }
-    
-    function renderSessionEntry(entry, query = '') {
-      const entryDiv = document.createElement('div');
-      entryDiv.className = `session-entry type-${entry.type || 'unknown'}`;
-
-      // Header
-      const headerDiv = document.createElement('div');
-      headerDiv.className = 'session-entry-header';
-
-      const typeSpan = document.createElement('span');
-      typeSpan.className = `entry-type ${entry.type || 'unknown'}`;
-      typeSpan.textContent = entry.type || 'unknown';
-      headerDiv.appendChild(typeSpan);
-
-      if (entry.timestamp) {
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'entry-timestamp';
-        timeSpan.textContent = new Date(entry.timestamp).toLocaleString();
-        headerDiv.appendChild(timeSpan);
-      }
-
-      if (entry.id) {
-        const idSpan = document.createElement('span');
-        idSpan.className = 'entry-id';
-        idSpan.textContent = `#${entry.id.substring(0, 8)}`;
-        headerDiv.appendChild(idSpan);
-      }
-
-      entryDiv.appendChild(headerDiv);
-
-      // Content
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'json-container';
-      let html = syntaxHighlightJSON(entry);
-      // Apply search term highlighting on top of syntax highlighting
-      if (query) {
-        html = highlightInHtml(html, query);
-      }
-      contentDiv.innerHTML = html;
-      entryDiv.appendChild(contentDiv);
-
-      return entryDiv;
-    }
-    
-    function renderNoResults(query, container) {
-      container.innerHTML = `
-        <div class="no-results">
-          <div class="no-results-icon">🔍</div>
-          <div class="no-results-text">No matches found for "${escapeHtml(query)}"</div>
-          <div class="no-results-hint">Try a different search term or use field:value syntax</div>
-        </div>
-      `;
-    }
-
-    // ===== Gateway Logs (Backend Search) =====
-    
-    function filterGatewayLogs() {
-      if (gatewaySearchTimer) clearTimeout(gatewaySearchTimer);
-      
-      const searchInput = document.getElementById('gateway-search');
-      const searchStats = document.getElementById('gateway-search-stats');
-      const searchHelp = document.getElementById('gateway-search-help');
-      const query = searchInput.value.trim();
-      
-      searchHelp.style.display = query && !query.includes(':') ? 'block' : 'none';
-      
-      gatewaySearchTimer = setTimeout(async () => {
-        if (!query) {
-          // No search - reconnect to WebSocket for live streaming
-          searchStats.textContent = '';
-          if (ws) switchLogFile();
-          return;
-        }
-        
-        setSearchLoading('gateway-search-stats', true);
-        
-        try {
-          const fileInfo = logFileSelect.value ? JSON.parse(logFileSelect.value) : null;
-          const params = new URLSearchParams({ q: query, limit: SEARCH_LIMIT });
-          if (fileInfo) {
-            params.set('file', fileInfo.name);
-            params.set('dir', fileInfo.dir);
-          }
-          
-          const response = await fetch(`/api/logs/search?${params}`);
-          const data = await response.json();
-          
-          logContainer.innerHTML = '';
-          
-          if (!data.success) {
-            showToast(`Search error: ${data.message}`, 'error');
-            searchStats.textContent = 'Error';
-            return;
-          }
-          
-          if (data.results.length === 0) {
-            renderNoResults(query, logContainer);
-            searchStats.textContent = '0 results';
-            return;
-          }
-          
-          const fragment = document.createDocumentFragment();
-          for (const item of data.results) {
-            fragment.appendChild(renderLogLine(item, query));
-          }
-          logContainer.appendChild(fragment);
-          
-          searchStats.textContent = data.truncated 
-            ? `${data.results.length}+ results (showing first ${SEARCH_LIMIT})`
-            : `${data.results.length} results`;
-          
-          logContainer.scrollTop = logContainer.scrollHeight;
-        } catch (err) {
-          console.error('Search error:', err);
-          showToast('Search failed', 'error');
-          searchStats.textContent = 'Error';
-        }
-      }, DEBOUNCE_MS);
-    }
-    
-    function clearGatewaySearch() {
-      document.getElementById('gateway-search').value = '';
-      document.getElementById('gateway-search-stats').textContent = '';
-      document.getElementById('gateway-search-help').style.display = 'none';
-      if (ws) switchLogFile();
-    }
-
-    // ===== Session Logs (Backend Search) =====
-    
-    function filterSessionLogs() {
-      if (sessionSearchTimer) clearTimeout(sessionSearchTimer);
-      
-      const searchInput = document.getElementById('session-search');
-      const searchStats = document.getElementById('session-search-stats');
-      const searchHelp = document.getElementById('session-search-help');
-      const query = searchInput.value.trim();
-      
-      searchHelp.style.display = query && !query.includes(':') ? 'block' : 'none';
-      
-      sessionSearchTimer = setTimeout(async () => {
-        if (!currentSessionId) return;
-        
-        if (!query) {
-          // No search - reload initial data
-          searchStats.textContent = '';
-          loadSessionLog();
-          return;
-        }
-        
-        setSearchLoading('session-search-stats', true);
-        
-        try {
-          const params = new URLSearchParams({ q: query, id: currentSessionId, limit: SEARCH_LIMIT });
-          const response = await fetch(`/api/sessions/search?${params}`);
-          const data = await response.json();
-          
-          // Clear entries but keep session info
-          const entries = sessionLogContainer.querySelectorAll('.session-entry, .log-line, .no-results, .load-more-container');
-          entries.forEach(el => el.remove());
-          
-          if (!data.success) {
-            showToast(`Search error: ${data.message}`, 'error');
-            searchStats.textContent = 'Error';
-            return;
-          }
-          
-          if (data.results.length === 0) {
-            renderNoResults(query, sessionLogContainer);
-            searchStats.textContent = '0 results';
-            return;
-          }
-          
-          const fragment = document.createDocumentFragment();
-          for (const entry of data.results) {
-            if (entry._raw) {
-              const div = document.createElement('div');
-              div.className = 'log-line';
-              div.innerHTML = highlightTerms(entry._raw, query);
-              fragment.appendChild(div);
-            } else {
-              fragment.appendChild(renderSessionEntry(entry, query));
-            }
-          }
-          sessionLogContainer.appendChild(fragment);
-          
-          searchStats.textContent = data.truncated 
-            ? `${data.results.length}+ results (showing first ${SEARCH_LIMIT})`
-            : `${data.results.length} results`;
-        } catch (err) {
-          console.error('Session search error:', err);
-          showToast('Search failed', 'error');
-          searchStats.textContent = 'Error';
-        }
-      }, DEBOUNCE_MS);
-    }
-    
-    function clearSessionSearch() {
-      document.getElementById('session-search').value = '';
-      document.getElementById('session-search-stats').textContent = '';
-      document.getElementById('session-search-help').style.display = 'none';
-      if (currentSessionId) loadSessionLog();
-    }
-
-    // ===== WebSocket for Live Log Streaming =====
-    
-    function connectWebSocket() {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${protocol}//${window.location.host}`);
-
-      ws.onopen = () => {
-        connectionDot.classList.add('connected');
-        connectionText.textContent = 'Connected';
-      };
-
-      ws.onclose = () => {
-        connectionDot.classList.remove('connected');
-        connectionText.textContent = 'Disconnected';
-        setTimeout(connectWebSocket, 3000);
-      };
-
-      ws.onerror = (error) => console.error('WebSocket error:', error);
-
-      ws.onmessage = (event) => {
-        // Don't update if user is searching
-        if (document.getElementById('gateway-search').value.trim()) return;
-        
-        try {
-          const msg = JSON.parse(event.data);
-          
-          if (msg.type === 'initial') {
-            logContainer.innerHTML = '';
-            const lines = msg.data.split('\n').filter(l => l.trim());
-            const fragment = document.createDocumentFragment();
-            for (const line of lines) {
-              let item = { raw: line };
-              const trimmed = line.trim();
-              if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-                  (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-                try { item = { parsed: JSON.parse(trimmed), raw: line }; } catch {}
-              }
-              fragment.appendChild(renderLogLine(item));
-            }
-            logContainer.appendChild(fragment);
-            if (document.getElementById('auto-scroll').checked) {
-              logContainer.scrollTop = logContainer.scrollHeight;
-            }
-          } else if (msg.type === 'log') {
-            const lines = msg.data.split('\n').filter(l => l.trim());
-            for (const line of lines) {
-              let item = { raw: line };
-              const trimmed = line.trim();
-              if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-                  (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-                try { item = { parsed: JSON.parse(trimmed), raw: line }; } catch {}
-              }
-              logContainer.appendChild(renderLogLine(item));
-            }
-            // Limit DOM elements (virtual scroll - keep last 500)
-            while (logContainer.children.length > INITIAL_LIMIT) {
-              logContainer.removeChild(logContainer.firstChild);
-            }
-            if (document.getElementById('auto-scroll').checked) {
-              logContainer.scrollTop = logContainer.scrollHeight;
-            }
-          } else if (msg.type === 'error') {
-            const div = document.createElement('div');
-            div.className = 'log-line error';
-            div.textContent = `ERROR: ${msg.message}`;
-            logContainer.appendChild(div);
-          } else if (msg.type === 'info') {
-            showToast(msg.message, 'success');
-          } else if (msg.type === 'agent-status') {
-            // Handle agent status updates from server polling
-            if (msg.updates && Array.isArray(msg.updates)) {
-              handleAgentStatusUpdate(msg.updates);
-            }
-          }
-        } catch (err) {
-          console.error('Error parsing message:', err);
-        }
-      };
-    }
-
-    // ===== Session Loading =====
-    
-    async function loadSessionLog() {
-      const sessionId = sessionFileSelect.value;
-      currentSessionId = sessionId;
-      
-      if (!sessionId) {
-        sessionLogContainer.innerHTML = '<div class="loading">Select a session to view</div>';
-        sessionInfoContainer.innerHTML = '';
-        return;
-      }
-
-      sessionLogContainer.innerHTML = '<div class="loading"><div class="spinner"></div> Loading session...</div>';
-      sessionInfoContainer.innerHTML = '';
-      document.getElementById('session-search').value = '';
-      document.getElementById('session-search-stats').textContent = '';
-
-      try {
-        const response = await fetch(`/api/sessions/${sessionId}?limit=${INITIAL_LIMIT}`);
-        const data = await response.json();
-        
-        if (!data.success) {
-          sessionLogContainer.innerHTML = `<div class="loading">Error: ${data.message}</div>`;
-          return;
-        }
-
-        sessionTotalLines = data.totalLines || data.results.length;
-        sessionLogContainer.innerHTML = '';
-
-        // Render session info from first entry
-        const firstSession = data.results.find(e => e.type === 'session');
-        if (firstSession) renderSessionInfo(firstSession);
-
-        // Render entries
-        const fragment = document.createDocumentFragment();
-        for (const entry of data.results) {
-          if (entry._raw) {
-            const div = document.createElement('div');
-            div.className = 'log-line';
-            div.textContent = entry._raw;
-            fragment.appendChild(div);
-          } else {
-            fragment.appendChild(renderSessionEntry(entry));
-          }
-        }
-        sessionLogContainer.appendChild(fragment);
-        
-        // Show truncation notice if needed
-        if (data.truncated) {
-          const notice = document.createElement('div');
-          notice.className = 'load-more-container';
-          notice.innerHTML = `
-            <div class="truncation-notice">Showing last ${data.results.length} of ${data.totalLines} entries. Use search to find specific entries.</div>
-          `;
-          sessionLogContainer.insertBefore(notice, sessionLogContainer.firstChild);
-        }
-
-      } catch (err) {
-        console.error('Error loading session:', err);
-        sessionLogContainer.innerHTML = `<div class="loading">Error loading session: ${err.message}</div>`;
-      }
-    }
-
-    function renderSessionInfo(session) {
-      sessionInfoContainer.innerHTML = `
-        <div class="session-info">
-          <div class="session-info-item">
-            <span class="session-info-label">Session ID</span>
-            <span class="session-info-value">${session.id || 'N/A'}</span>
-          </div>
-          <div class="session-info-item">
-            <span class="session-info-label">Version</span>
-            <span class="session-info-value">${session.version || 'N/A'}</span>
-          </div>
-          <div class="session-info-item">
-            <span class="session-info-label">Started</span>
-            <span class="session-info-value">${session.timestamp ? new Date(session.timestamp).toLocaleString() : 'N/A'}</span>
-          </div>
-          <div class="session-info-item">
-            <span class="session-info-label">Working Directory</span>
-            <span class="session-info-value">${session.cwd || 'N/A'}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    // ===== Gateway Control =====
-    
-    async function gatewayAction(action) {
-      const buttons = document.querySelectorAll('.controls button');
-      buttons.forEach(btn => btn.disabled = true);
-      
-      try {
-        const response = await fetch(`/api/gateway/${action}`, { method: 'POST' });
-        const data = await response.json();
-        
-        if (data.success) {
-          showToast(`Gateway ${action} successful`, 'success');
-        } else {
-          showToast(`Error: ${data.message}`, 'error');
-        }
-        setTimeout(checkStatus, 1000);
-      } catch (err) {
-        showToast(`Error: ${err.message}`, 'error');
-      } finally {
-        buttons.forEach(btn => btn.disabled = false);
+        console.error('Metrics error:', err);
       }
     }
 
@@ -1939,46 +1155,358 @@
       try {
         const response = await fetch('/api/status');
         const data = await response.json();
-        
-        statusBadge.className = 'status-badge';
-        
+        const dot = document.getElementById('gateway-status-dot');
+        const text = document.getElementById('gateway-status-text');
+
         if (data.status && data.status.toLowerCase().includes('running')) {
-          statusBadge.textContent = 'Running';
-          statusBadge.classList.add('status-running');
+          dot.classList.remove('offline', 'warning');
+          text.textContent = 'Running';
         } else if (data.status && data.status.toLowerCase().includes('stopped')) {
-          statusBadge.textContent = 'Stopped';
-          statusBadge.classList.add('status-stopped');
+          dot.classList.add('offline');
+          text.textContent = 'Stopped';
         } else {
-          statusBadge.textContent = data.status || 'Unknown';
-          statusBadge.classList.add('status-unknown');
+          dot.classList.add('warning');
+          text.textContent = 'Unknown';
         }
       } catch (err) {
-        statusBadge.textContent = 'Unknown';
-        statusBadge.className = 'status-badge status-unknown';
+        document.getElementById('gateway-status-dot').classList.add('offline');
+        document.getElementById('gateway-status-text').textContent = 'Error';
       }
     }
 
-    // ===== File Loading =====
-    
+    // ===== Agents =====
+    async function loadAgents() {
+      const grid = document.getElementById('agents-grid');
+
+      try {
+        const response = await fetch('/api/agents');
+        if (response.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        const data = await response.json();
+
+        if (!data.success) {
+          grid.innerHTML = `<div class="no-results"><div class="no-results-icon">❌</div><div class="no-results-text">${data.message}</div></div>`;
+          return;
+        }
+
+        agentsData = data.agents;
+        renderAgents();
+        updateStats();
+        updateSidebarNav();
+      } catch (err) {
+        grid.innerHTML = `<div class="no-results"><div class="no-results-icon">❌</div><div class="no-results-text">Error: ${err.message}</div></div>`;
+      }
+    }
+
+    function updateStats() {
+      const total = agentsData.length;
+      const online = agentsData.filter(a => a.status === 'online').length;
+      const totalSessions = agentsData.reduce((sum, a) => sum + (a.sessionCount || a.sessionsCount || 0), 0);
+
+      document.getElementById('stat-agents').textContent = total;
+      document.getElementById('stat-online').textContent = online;
+      document.getElementById('stat-online-sub').textContent = `of ${total} connected`;
+      document.getElementById('stat-sessions').textContent = totalSessions;
+
+      const now = new Date();
+      document.getElementById('stat-last-update').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('stat-last-update-sub').textContent = `${online}/${total} online`;
+
+      // Fleet health bar
+      const healthBar = document.getElementById('fleet-health-bar');
+      const healthy = agentsData.filter(a => a.status === 'online').length;
+      const idle = agentsData.filter(a => a.status === 'unknown').length;
+      const offline = agentsData.filter(a => a.status === 'offline').length;
+
+      const healthyPct = total > 0 ? (healthy / total * 100) : 0;
+      const idlePct = total > 0 ? (idle / total * 100) : 0;
+      const offlinePct = total > 0 ? (offline / total * 100) : 0;
+
+      healthBar.innerHTML = `
+        <div class="health-segment healthy" style="width: ${healthyPct}%"></div>
+        <div class="health-segment idle" style="width: ${idlePct}%"></div>
+        <div class="health-segment offline" style="width: ${offlinePct}%"></div>
+      `;
+
+      document.getElementById('fleet-health-summary').textContent = 
+        `${healthy} healthy • ${idle} idle • ${offline} offline`;
+    }
+
+    function updateSidebarNav() {
+      const nav = document.getElementById('agents-nav-list');
+      nav.innerHTML = agentsData.map(agent => `
+        <div class="agent-nav-item" onclick="scrollToAgent('${agent.id}')">
+          <div class="agent-nav-left">
+            <span class="agent-nav-emoji">${agent.emoji || '🤖'}</span>
+            <span>${escapeHtml(agent.name || agent.id)}</span>
+          </div>
+          <span class="agent-nav-badge">${agent.sessionCount || agent.sessionsCount || 0}</span>
+        </div>
+      `).join('');
+    }
+
+    function scrollToAgent(agentId) {
+      const card = document.getElementById(`agent-${agentId}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.style.borderColor = 'var(--accent)';
+        setTimeout(() => card.style.borderColor = '', 1000);
+      }
+    }
+
+    function renderAgents() {
+      const grid = document.getElementById('agents-grid');
+
+      if (agentsData.length === 0) {
+        grid.innerHTML = `
+          <div class="no-results">
+            <div class="no-results-icon">🤖</div>
+            <div class="no-results-text">No agents configured</div>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = agentsData.map(agent => renderAgentCard(agent)).join('');
+
+      // Load sessions for each agent
+      agentsData.forEach(agent => loadAgentSessions(agent.id));
+    }
+
+    function renderAgentCard(agent) {
+      const status = agent.status || 'unknown';
+      const statusLabel = status === 'online' ? 'HEALTHY' : (status === 'offline' ? 'OFFLINE' : 'IDLE');
+      const lastSeen = agent.lastActivity ? formatRelativeTime(agent.lastActivity) : 'Unknown';
+      const sessionCount = agent.sessionCount || agent.sessionsCount || 0;
+
+      // Determine heartbeat status
+      const hbEnabled = agent.gatewayData?.heartbeat?.enabled !== false;
+
+      return `
+        <div class="agent-card" id="agent-${agent.id}">
+          <div class="agent-card-header">
+            <div class="agent-header-left">
+              <span class="agent-emoji-big">${agent.emoji || '🤖'}</span>
+              <div>
+                <div class="agent-title">${escapeHtml(agent.name || agent.id)}</div>
+                <div class="agent-id-text">${escapeHtml(agent.id)}</div>
+              </div>
+            </div>
+            <span class="agent-status-badge ${statusLabel.toLowerCase()}">${statusLabel}</span>
+          </div>
+
+          <div class="status-indicators">
+            <div class="status-indicator">
+              <span class="indicator-dot ${status === 'online' ? 'on' : 'off'}"></span>
+              Gateway
+            </div>
+            <div class="status-indicator">
+              <span class="indicator-dot ${sessionCount > 0 ? 'on' : 'off'}"></span>
+              Sessions
+            </div>
+            <div class="status-indicator">
+              <span class="indicator-dot ${hbEnabled ? 'on' : 'warn'}"></span>
+              Heartbeat
+            </div>
+            <div class="status-indicator">
+              <span class="indicator-dot ${agent.lastCheck ? 'on' : 'off'}"></span>
+              Last Poll
+            </div>
+          </div>
+
+          <div class="agent-card-body">
+            <div class="agent-info-row">
+              <div class="info-block">
+                <div class="info-label">Model</div>
+                <div class="info-value">${escapeHtml(agent.gatewayData?.model || 'claude-opus-4.5')}</div>
+              </div>
+              <div class="info-block">
+                <div class="info-label">Sessions</div>
+                <div class="info-value">${sessionCount}</div>
+              </div>
+            </div>
+
+            <div class="context-progress">
+              <div class="context-header">
+                <span class="context-label">Average Context</span>
+                <span class="context-percent low" id="context-${agent.id}">0%</span>
+              </div>
+              <div class="context-bar">
+                <div class="context-fill low" id="context-bar-${agent.id}" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="channels-section">
+              <div class="section-label">Channels</div>
+              <div class="channel-tags" id="channels-${agent.id}">
+                <span class="channel-tag">Loading...</span>
+              </div>
+            </div>
+
+            <div class="sessions-section">
+              <div class="section-label">Recent Sessions</div>
+              <div id="sessions-list-${agent.id}">
+                <div style="font-size: 12px; color: var(--text-muted);">Loading...</div>
+              </div>
+            </div>
+
+            <div class="cron-info" id="cron-${agent.id}">
+              ⏰ -- cron jobs
+            </div>
+          </div>
+
+          <div class="agent-card-footer">
+            <button class="agent-btn ${hbEnabled ? '' : 'primary'}" onclick="toggleHeartbeat('${agent.id}', ${!hbEnabled})">
+              ${hbEnabled ? '💓 HB ON' : '💔 HB OFF'}
+            </button>
+            <button class="agent-btn" onclick="triggerHeartbeat('${agent.id}')">⚡ Trigger</button>
+            <button class="agent-btn" onclick="refreshAgent('${agent.id}')">🔄 Refresh</button>
+            <button class="agent-btn danger" onclick="resetAgent('${agent.id}')">🗑 Reset</button>
+            <span class="agent-last-seen">Last seen: ${lastSeen}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadAgentSessions(agentId) {
+      try {
+        const response = await fetch(`/api/agents/${agentId}/sessions`);
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        const sessions = data.sessions || [];
+        const container = document.getElementById(`sessions-list-${agentId}`);
+        const channelsContainer = document.getElementById(`channels-${agentId}`);
+
+        // Update sessions list (show top 5)
+        if (sessions.length === 0) {
+          container.innerHTML = '<div style="font-size: 12px; color: var(--text-muted);">No active sessions</div>';
+        } else {
+          container.innerHTML = sessions.slice(0, 5).map(s => {
+            const key = s.key || s.sessionId || 'Unknown';
+            const shortKey = key.length > 40 ? key.substring(0, 40) + '...' : key;
+            const time = s.updatedAt ? formatRelativeTime(s.updatedAt) : '--';
+            return `
+              <div class="session-item">
+                <span class="session-key" title="${escapeHtml(key)}">${escapeHtml(shortKey)}</span>
+                <span class="session-time">${time}</span>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Extract unique channels
+        const channels = [...new Set(sessions.map(s => s.channel || 'unknown'))];
+        if (channels.length === 0) {
+          channelsContainer.innerHTML = '<span class="channel-tag">None</span>';
+        } else {
+          channelsContainer.innerHTML = channels.map(ch => 
+            `<span class="channel-tag ${ch}">${ch}</span>`
+          ).join('');
+        }
+
+        // Calculate average context usage
+        if (sessions.length > 0) {
+          const avgContext = Math.round(sessions.reduce((sum, s) => sum + (s.percentUsed || 0), 0) / sessions.length);
+          const contextEl = document.getElementById(`context-${agentId}`);
+          const contextBar = document.getElementById(`context-bar-${agentId}`);
+
+          let colorClass = 'low';
+          if (avgContext >= 80) colorClass = 'high';
+          else if (avgContext >= 50) colorClass = 'medium';
+
+          contextEl.textContent = avgContext + '%';
+          contextEl.className = `context-percent ${colorClass}`;
+          contextBar.style.width = avgContext + '%';
+          contextBar.className = `context-fill ${colorClass}`;
+        }
+
+      } catch (err) {
+        console.error('Error loading sessions:', err);
+      }
+    }
+
+    async function refreshAgent(agentId) {
+      showToast('Refreshing agent...', 'info');
+      try {
+        await fetch(`/api/agents/${agentId}/refresh`, { method: 'POST' });
+        await loadAgents();
+        showToast('Agent refreshed', 'success');
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function refreshAll() {
+      showToast('Refreshing all agents...', 'info');
+      try {
+        await fetch('/api/agents/refresh-all', { method: 'POST' });
+        await loadAgents();
+        showToast('All agents refreshed', 'success');
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    function toggleHeartbeat(agentId, enable) {
+      showToast(`Heartbeat ${enable ? 'enabled' : 'disabled'} (simulated)`, 'info');
+    }
+
+    function triggerHeartbeat(agentId) {
+      showToast('Heartbeat triggered (simulated)', 'info');
+    }
+
+    function resetAgent(agentId) {
+      if (confirm('Are you sure you want to reset this agent?')) {
+        showToast('Reset requested (simulated)', 'info');
+      }
+    }
+
+    // ===== Logs Modal =====
+    function openLogsModal(type) {
+      currentLogType = type;
+      
+      if (type === 'gateway') {
+        document.getElementById('logs-modal').classList.add('show');
+        document.getElementById('modal-title').textContent = 'Gateway Logs';
+        loadLogFiles();
+        connectWebSocket();
+      } else {
+        document.getElementById('session-logs-modal').classList.add('show');
+        loadSessionFiles();
+      }
+    }
+
+    function closeLogsModal() {
+      document.getElementById('logs-modal').classList.remove('show');
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+    }
+
+    function closeSessionLogsModal() {
+      document.getElementById('session-logs-modal').classList.remove('show');
+      currentSessionId = null;
+    }
+
     async function loadLogFiles() {
       try {
         const response = await fetch('/api/logs/files');
         const data = await response.json();
-        
-        logFileSelect.innerHTML = '';
-        
+        const select = document.getElementById('log-file-select');
+
+        select.innerHTML = '';
         if (data.files && data.files.length > 0) {
-          data.files.forEach((file, index) => {
-            const option = document.createElement('option');
-            option.value = JSON.stringify({ name: file.name, dir: file.dir });
-            option.textContent = file.displayName + (index === 0 ? ' (latest)' : '');
-            logFileSelect.appendChild(option);
+          data.files.forEach((file, i) => {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify({ name: file.name, dir: file.dir });
+            opt.textContent = file.displayName + (i === 0 ? ' (latest)' : '');
+            select.appendChild(opt);
           });
-        } else {
-          const option = document.createElement('option');
-          option.value = '';
-          option.textContent = 'No log files found';
-          logFileSelect.appendChild(option);
         }
       } catch (err) {
         console.error('Error loading log files:', err);
@@ -1989,330 +1517,260 @@
       try {
         const response = await fetch('/api/sessions/files');
         const data = await response.json();
-        
-        sessionFileSelect.innerHTML = '<option value="">Select a session...</option>';
-        
+        const select = document.getElementById('session-file-select');
+
+        select.innerHTML = '<option value="">Select a session...</option>';
         if (data.files && data.files.length > 0) {
-          data.files.forEach((file, index) => {
-            const option = document.createElement('option');
-            option.value = file.sessionId;
+          data.files.forEach((file, i) => {
+            const opt = document.createElement('option');
+            opt.value = file.sessionId;
             const date = new Date(file.mtime);
             const sizeKB = (file.size / 1024).toFixed(1);
-            option.textContent = `${file.sessionId.substring(0, 8)}... (${date.toLocaleString()}, ${sizeKB}KB)`;
-            if (index === 0) option.textContent += ' [latest]';
-            sessionFileSelect.appendChild(option);
+            opt.textContent = `${file.sessionId.substring(0, 8)}... (${date.toLocaleString()}, ${sizeKB}KB)`;
+            if (i === 0) opt.textContent += ' [latest]';
+            select.appendChild(opt);
           });
         }
-        return data;
       } catch (err) {
         console.error('Error loading session files:', err);
-        showToast('Failed to load session files', 'error');
-        throw err;
       }
     }
 
     function switchLogFile() {
-      const selectedValue = logFileSelect.value;
-      if (ws && ws.readyState === WebSocket.OPEN && selectedValue) {
-        logContainer.innerHTML = '';
-        const fileInfo = JSON.parse(selectedValue);
+      const select = document.getElementById('log-file-select');
+      if (ws && ws.readyState === WebSocket.OPEN && select.value) {
+        document.getElementById('log-container').innerHTML = '';
+        const fileInfo = JSON.parse(select.value);
         ws.send(JSON.stringify({ type: 'switch-log', file: fileInfo.name, dir: fileInfo.dir }));
       }
     }
 
-    function switchTab(tab) {
-      currentTab = tab;
-      
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
-      
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      document.getElementById(`${tab}-tab`).classList.add('active');
-      
-      if (tab === 'sessions' && sessionFileSelect.options.length <= 1) {
-        loadSessionFiles();
-      }
-      
-      if (tab === 'agents') {
-        loadAgents().then(() => {
-          // Re-load sessions if an agent was expanded
-          if (expandedAgentId) {
-            loadAgentSessions(expandedAgentId);
+    // ===== WebSocket =====
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+      ws.onopen = () => {
+        document.getElementById('ws-connection-dot').classList.add('connected');
+        document.getElementById('ws-connection-text').textContent = 'Connected';
+      };
+
+      ws.onclose = () => {
+        document.getElementById('ws-connection-dot').classList.remove('connected');
+        document.getElementById('ws-connection-text').textContent = 'Disconnected';
+      };
+
+      ws.onmessage = (event) => {
+        if (document.getElementById('log-search').value.trim()) return;
+
+        try {
+          const msg = JSON.parse(event.data);
+          const container = document.getElementById('log-container');
+
+          if (msg.type === 'initial') {
+            container.innerHTML = '';
+            const lines = msg.data.split('\n').filter(l => l.trim());
+            lines.forEach(line => container.appendChild(renderLogLine(line)));
+            if (document.getElementById('auto-scroll').checked) {
+              container.scrollTop = container.scrollHeight;
+            }
+          } else if (msg.type === 'log') {
+            const lines = msg.data.split('\n').filter(l => l.trim());
+            lines.forEach(line => container.appendChild(renderLogLine(line)));
+            while (container.children.length > 500) {
+              container.removeChild(container.firstChild);
+            }
+            if (document.getElementById('auto-scroll').checked) {
+              container.scrollTop = container.scrollHeight;
+            }
+          } else if (msg.type === 'agent-status' && msg.updates) {
+            handleAgentStatusUpdate(msg.updates);
           }
-        });
-      }
+        } catch (err) {
+          console.error('WS message error:', err);
+        }
+      };
     }
 
-    // ===== Agent Fleet =====
-    let agentsData = [];
-    let expandedAgentId = null;
+    function renderLogLine(line) {
+      const div = document.createElement('div');
+      div.className = 'log-line';
 
-    async function loadAgents() {
-      const grid = document.getElementById('agents-grid');
-      
-      try {
-        const response = await fetch('/api/agents');
-        if (response.status === 401) {
-          window.location.href = '/login';
-          return;
-        }
-        const data = await response.json();
-        
-        if (!data.success) {
-          grid.innerHTML = `<div class="agent-error">Failed to load agents: ${data.message}</div>`;
-          return;
-        }
-        
-        agentsData = data.agents;
-        renderAgents();
-      } catch (err) {
-        console.error('Error loading agents:', err);
-        grid.innerHTML = `<div class="agent-error">Error: ${err.message}</div>`;
+      const trimmed = line.trim();
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+          (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          const jsonDiv = document.createElement('div');
+          jsonDiv.className = 'json-container';
+          jsonDiv.innerHTML = syntaxHighlightJSON(JSON.parse(trimmed));
+          div.appendChild(jsonDiv);
+          return div;
+        } catch {}
       }
+
+      if (line.toLowerCase().includes('error')) div.classList.add('error');
+      else if (line.toLowerCase().includes('warn')) div.classList.add('warn');
+      else if (line.toLowerCase().includes('info')) div.classList.add('info');
+
+      div.textContent = line;
+      return div;
     }
 
-    function renderAgents() {
-      const grid = document.getElementById('agents-grid');
-      
-      if (agentsData.length === 0) {
-        grid.innerHTML = `
+    function syntaxHighlightJSON(json) {
+      let str = JSON.stringify(json, null, 2);
+      str = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return str.replace(
+        /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+        function (match) {
+          let cls = 'json-number';
+          if (/^"/.test(match)) {
+            cls = /:$/.test(match) ? 'json-key' : 'json-string';
+          } else if (/true|false/.test(match)) {
+            cls = 'json-boolean';
+          } else if (/null/.test(match)) {
+            cls = 'json-null';
+          }
+          return '<span class="' + cls + '">' + match + '</span>';
+        }
+      );
+    }
+
+    async function filterLogs() {
+      clearTimeout(searchDebounceTimer);
+      const query = document.getElementById('log-search').value.trim();
+
+      if (!query) {
+        switchLogFile();
+        return;
+      }
+
+      searchDebounceTimer = setTimeout(async () => {
+        try {
+          const fileInfo = document.getElementById('log-file-select').value;
+          const params = new URLSearchParams({ q: query, limit: 200 });
+          if (fileInfo) {
+            const f = JSON.parse(fileInfo);
+            params.set('file', f.name);
+            params.set('dir', f.dir);
+          }
+
+          const response = await fetch(`/api/logs/search?${params}`);
+          const data = await response.json();
+          const container = document.getElementById('log-container');
+
+          container.innerHTML = '';
+          if (data.results.length === 0) {
+            container.innerHTML = `<div class="no-results"><div class="no-results-icon">🔍</div><div class="no-results-text">No matches found</div></div>`;
+            return;
+          }
+
+          data.results.forEach(item => {
+            container.appendChild(renderLogLine(item.raw || JSON.stringify(item.parsed)));
+          });
+        } catch (err) {
+          console.error('Search error:', err);
+        }
+      }, 300);
+    }
+
+    // ===== Session Logs =====
+    async function loadSessionLog() {
+      const sessionId = document.getElementById('session-file-select').value;
+      currentSessionId = sessionId;
+
+      if (!sessionId) {
+        document.getElementById('session-log-container').innerHTML = `
           <div class="no-results">
-            <div class="no-results-icon">🤖</div>
-            <div class="no-results-text">No agents configured</div>
-            <div class="no-results-hint">Add agents to agents.json or check your OpenClaw configuration</div>
+            <div class="no-results-icon">💬</div>
+            <div class="no-results-text">Select a session to view logs</div>
           </div>
         `;
         return;
       }
-      
-      grid.innerHTML = agentsData.map(agent => renderAgentCard(agent)).join('');
-    }
 
-    function renderAgentCard(agent) {
-      const isExpanded = expandedAgentId === agent.id;
-      const lastCheck = agent.lastCheck ? formatRelativeTime(new Date(agent.lastCheck)) : 'Never';
-      const lastActivity = agent.lastActivity ? formatRelativeTime(new Date(agent.lastActivity)) : 'Unknown';
-      
-      return `
-        <div class="agent-card ${isExpanded ? 'expanded' : ''}" onclick="toggleAgentCard('${agent.id}')">
-          <div class="agent-card-header">
-            <span class="agent-emoji">${agent.emoji || '🤖'}</span>
-            <div class="agent-info">
-              <div class="agent-name">${escapeHtml(agent.name)}</div>
-              <div class="agent-id">${escapeHtml(agent.id)}</div>
-            </div>
-            <span class="agent-status-badge ${agent.status || 'unknown'}">${agent.status || 'unknown'}</span>
-          </div>
-          
-          <div class="agent-meta">
-            <div class="agent-meta-item">
-              <span class="agent-meta-label">Host</span>
-              <span class="agent-meta-value">${agent.host}:${agent.port}</span>
-            </div>
-            <div class="agent-meta-item">
-              <span class="agent-meta-label">Sessions</span>
-              <span class="agent-meta-value">${agent.sessionCount || agent.sessionsCount || 0}</span>
-            </div>
-            <div class="agent-meta-item">
-              <span class="agent-meta-label">Last Check</span>
-              <span class="agent-meta-value">${lastCheck}</span>
-            </div>
-            <div class="agent-meta-item">
-              <span class="agent-meta-label">Last Activity</span>
-              <span class="agent-meta-value">${lastActivity}</span>
-            </div>
-          </div>
-          
-          ${agent.error ? `<div class="agent-error">⚠️ ${escapeHtml(agent.error)}</div>` : ''}
-          
-          <div class="agent-details">
-            <div class="agent-meta-item" style="margin-bottom: 12px;">
-              <span class="agent-meta-label">Workspace</span>
-              <span class="agent-meta-value agent-workspace">${escapeHtml(agent.workspace || 'N/A')}</span>
-            </div>
-            
-            <div class="agent-sessions-header">
-              <span class="agent-sessions-title">Active Sessions</span>
-              <button class="agent-refresh-btn" onclick="event.stopPropagation(); refreshAgent('${agent.id}')">🔄 Refresh</button>
-            </div>
-            <div class="agent-sessions-list" id="sessions-${agent.id}">
-              <div class="loading" style="padding: 10px;"><div class="spinner"></div> Loading sessions...</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
+      const container = document.getElementById('session-log-container');
+      container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
-    function formatRelativeTime(date) {
-      const now = new Date();
-      const diffMs = now - date;
-      const diffSecs = Math.floor(diffMs / 1000);
-      const diffMins = Math.floor(diffSecs / 60);
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
-      
-      if (diffSecs < 60) return `${diffSecs}s ago`;
-      if (diffMins < 60) return `${diffMins}m ago`;
-      if (diffHours < 24) return `${diffHours}h ago`;
-      return `${diffDays}d ago`;
-    }
-
-    async function toggleAgentCard(agentId) {
-      if (expandedAgentId === agentId) {
-        expandedAgentId = null;
-        renderAgents();
-      } else {
-        expandedAgentId = agentId;
-        renderAgents();
-        // Load sessions AFTER rendering
-        await loadAgentSessions(agentId);
-      }
-    }
-
-    async function loadAgentSessions(agentId) {
       try {
-        const response = await fetch(`/api/agents/${agentId}/sessions`);
+        const response = await fetch(`/api/sessions/${sessionId}?limit=500`);
         const data = await response.json();
-        
-        const container = document.getElementById(`sessions-${agentId}`);
-        if (!container) return;
-        
+
         if (!data.success) {
-          container.innerHTML = `<div class="agent-error">Failed to load: ${data.error || 'Unknown error'}</div>`;
+          container.innerHTML = `<div class="no-results"><div class="no-results-text">Error: ${data.message}</div></div>`;
           return;
         }
-        
-        if (!data.sessions || data.sessions.length === 0) {
-          container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px;">No active sessions</div>';
-          return;
-        }
-        
-        container.innerHTML = data.sessions.map(session => {
-          const sessionId = session.id || session.sessionId || 'Unknown';
-          const channel = session.channel || session.type || 'unknown';
-          const model = session.model || 'unknown';
-          const totalTokens = session.totalTokens || 0;
-          const percentUsed = session.percentUsed || 0;
-          const updatedAt = session.updatedAt ? formatRelativeTime(new Date(session.updatedAt)) : 'Unknown';
-          
-          // Determine token bar color class
-          let tokenColorClass = 'low';
-          if (percentUsed >= 80) tokenColorClass = 'high';
-          else if (percentUsed >= 50) tokenColorClass = 'medium';
-          
-          // Format token display
-          const formattedTokens = totalTokens >= 1000 
-            ? (totalTokens / 1000).toFixed(1) + 'K' 
-            : totalTokens.toString();
-          
-          return `
-            <div class="agent-session-item" onclick="event.stopPropagation(); navigateToSessionLog('${escapeHtml(sessionId)}')">
-              <div class="session-header-row">
-                <span class="agent-session-id">${escapeHtml(sessionId.substring(0, 16))}...</span>
-                <span class="agent-session-channel ${escapeHtml(channel)}">${escapeHtml(channel)}</span>
-              </div>
-              <div class="session-meta-row">
-                <div class="session-meta-item">
-                  <span class="icon">🤖</span>
-                  <span class="value">${escapeHtml(model)}</span>
-                </div>
-                <div class="session-meta-item">
-                  <span class="icon">⏱️</span>
-                  <span class="value">${escapeHtml(updatedAt)}</span>
-                </div>
-              </div>
-              <div class="session-tokens-row">
-                <span class="session-token-label">Tokens</span>
-                <div class="session-token-bar">
-                  <div class="session-token-progress ${tokenColorClass}" style="width: ${Math.min(percentUsed, 100)}%"></div>
-                </div>
-                <span class="session-token-percent ${tokenColorClass}">${percentUsed}%</span>
-              </div>
-              <div class="session-click-hint">📋 Click to view logs</div>
-            </div>
-          `;
-        }).join('');
+
+        container.innerHTML = '';
+        data.results.forEach(entry => {
+          container.appendChild(renderSessionEntry(entry));
+        });
       } catch (err) {
-        const container = document.getElementById(`sessions-${agentId}`);
-        if (container) {
-          container.innerHTML = `<div class="agent-error">Error: ${err.message}</div>`;
-        }
+        container.innerHTML = `<div class="no-results"><div class="no-results-text">Error: ${err.message}</div></div>`;
       }
     }
 
-    // Navigate to Session Logs tab and select the session
-    function navigateToSessionLog(sessionId) {
-      // Switch to sessions tab
-      currentTab = 'sessions';
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-btn')[1].classList.add('active'); // Sessions tab is index 1
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      document.getElementById('sessions-tab').classList.add('active');
-      
-      // Load session files if not already loaded
-      loadSessionFiles().then(() => {
-        // Try to find and select the session
-        const select = document.getElementById('session-file-select');
-        let found = false;
-        
-        for (let i = 0; i < select.options.length; i++) {
-          if (select.options[i].value === sessionId || 
-              select.options[i].value.startsWith(sessionId.substring(0, 8))) {
-            select.selectedIndex = i;
-            found = true;
-            break;
+    function renderSessionEntry(entry) {
+      const div = document.createElement('div');
+      div.className = `session-entry type-${entry.type || 'unknown'}`;
+
+      const header = document.createElement('div');
+      header.className = 'session-entry-header';
+
+      const typeSpan = document.createElement('span');
+      typeSpan.className = `entry-type ${entry.type || 'unknown'}`;
+      typeSpan.textContent = entry.type || 'unknown';
+      header.appendChild(typeSpan);
+
+      if (entry.timestamp) {
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'entry-timestamp';
+        timeSpan.textContent = new Date(entry.timestamp).toLocaleString();
+        header.appendChild(timeSpan);
+      }
+
+      div.appendChild(header);
+
+      const content = document.createElement('div');
+      content.className = 'json-container';
+      content.innerHTML = syntaxHighlightJSON(entry);
+      div.appendChild(content);
+
+      return div;
+    }
+
+    async function filterSessionLogs() {
+      clearTimeout(searchDebounceTimer);
+      const query = document.getElementById('session-search').value.trim();
+
+      if (!currentSessionId) return;
+
+      if (!query) {
+        loadSessionLog();
+        return;
+      }
+
+      searchDebounceTimer = setTimeout(async () => {
+        try {
+          const params = new URLSearchParams({ q: query, id: currentSessionId, limit: 200 });
+          const response = await fetch(`/api/sessions/search?${params}`);
+          const data = await response.json();
+          const container = document.getElementById('session-log-container');
+
+          container.innerHTML = '';
+          if (data.results.length === 0) {
+            container.innerHTML = `<div class="no-results"><div class="no-results-icon">🔍</div><div class="no-results-text">No matches found</div></div>`;
+            return;
           }
+
+          data.results.forEach(entry => {
+            container.appendChild(renderSessionEntry(entry));
+          });
+        } catch (err) {
+          console.error('Search error:', err);
         }
-        
-        if (found) {
-          loadSessionLog();
-        } else {
-          showToast(`Session log not found: ${sessionId.substring(0, 8)}...`, 'error');
-        }
-      });
+      }, 300);
     }
 
-    async function refreshAgent(agentId) {
-      try {
-        showToast('Refreshing agent...', 'info');
-        const response = await fetch(`/api/agents/${agentId}/refresh`, { method: 'POST' });
-        const data = await response.json();
-        
-        if (data.success) {
-          showToast('Agent refreshed', 'success');
-          await loadAgents();
-        } else {
-          showToast(`Error: ${data.message}`, 'error');
-        }
-      } catch (err) {
-        showToast(`Error: ${err.message}`, 'error');
-      }
-    }
-
-    async function refreshAllAgents() {
-      const btn = document.getElementById('btn-refresh-agents');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Refreshing...';
-      
-      try {
-        const response = await fetch('/api/agents/refresh-all', { method: 'POST' });
-        const data = await response.json();
-        
-        if (data.success) {
-          showToast('All agents refreshed', 'success');
-          await loadAgents();
-        } else {
-          showToast(`Error: ${data.message}`, 'error');
-        }
-      } catch (err) {
-        showToast(`Error: ${err.message}`, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span>🔄</span> Refresh All';
-      }
-    }
-
-    // Handle WebSocket agent status updates
     function handleAgentStatusUpdate(updates) {
       for (const update of updates) {
         const idx = agentsData.findIndex(a => a.id === update.agentId);
@@ -2324,22 +1782,25 @@
           agentsData[idx].error = update.error;
         }
       }
-      
-      // Re-render if on agents tab
-      if (currentTab === 'agents') {
-        renderAgents();
-      }
+      renderAgents();
+      updateStats();
+      updateSidebarNav();
+    }
+
+    function switchView(view) {
+      // For now, just overview
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelector('.nav-item').classList.add('active');
     }
 
     // ===== Initialize =====
-    initTheme();
-    connectWebSocket();
-    checkStatus();
-    loadLogFiles();
+    updateTime();
+    setInterval(updateTime, 1000);
     fetchMetrics();
-    loadAgents();  // Load agents on startup (default tab)
+    setInterval(fetchMetrics, 5000);
+    checkStatus();
     setInterval(checkStatus, 30000);
-    setInterval(fetchMetrics, 5000);  // Refresh metrics every 5 seconds
+    loadAgents();
   </script>
 </body>
 </html>
